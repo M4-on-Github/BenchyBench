@@ -1,0 +1,19 @@
+[submodule "DeGF"]
+	path = DeGF
+	url = https://github.com/M4-on-Github/DeGF.git
+	branch = interactive_session
+
+[submodule "ONLY"]
+	path = ONLY
+	url = https://github.com/M4-on-Github/ONLY.git
+	branch = ONLY_CASTOR
+
+[submodule "Eval_CASTOR"]
+	path = Eval_CASTOR
+	url = https://github.com/M4-on-Github/Eval_CASTOR.git
+	branch = main
+
+[submodule "QWEN"]
+	path = QWEN
+	url = https://github.com/M4-on-Github/QWEN-Maritime.git
+	branch = main

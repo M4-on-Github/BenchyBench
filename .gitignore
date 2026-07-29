@@ -1,0 +1,36 @@
+# Temporary local working dirs (not part of the project)
+temp_*/
+tempp/
+temppp/
+sd_test/
+test_*/
+sythentic_calibration_test/
+rag_system/
+gt_batches/
+
+# Copies and archives
+DeGF - Copy/
+original_DeGF/
+RISS2026-paper/
+RISS2026-poster/
+
+# Inference results (live in /data/$USER/ on cluster)
+results/
+*.jsonl
+*.csv
+
+# Scratch files
+cmds.txt
+*.pdf
+
+# Claude Code local config
+.claude/
+.claudeignore
+CLAUDE.md
+
+# Empty placeholder dirs
+BenchyBench/
+
+# OS
+.DS_Store
+Thumbs.db
