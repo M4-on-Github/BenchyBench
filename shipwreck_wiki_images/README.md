@@ -10,12 +10,8 @@ sorted_images/
   sunken/      (~33 images)
 ```
 
-Images are not tracked in git (binary files). Transfer to cluster via rsync:
-
-```bash
-rsync -avz shipwreck_wiki_images/sorted_images/ \
-    <user>@head1.condo.cs.cmu.edu:~/benchybench/shipwreck_wiki_images/sorted_images/
-```
+Images are tracked in git. After cloning BenchyBench with `--recurse-submodules`
+the images are available immediately at `shipwreck_wiki_images/sorted_images/`.
 
 All inference scripts resolve images relative to the benchybench root, so
 on the cluster the expected path is:
