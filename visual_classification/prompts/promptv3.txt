@@ -1,0 +1,42 @@
+Analyze the provided image of a vessel for the CASTOR maritime disaster response pipeline. Work through your reasoning step-by-step before producing the final structured output. 
+Keep each reasoning step to 2–4 sentences.
+
+Step 1 — Observe & Evidence Catalog. Describe what you literally see: the vessel, its orientation, the water, surroundings, and lighting. Crucially, list specific visual anomalies (e.g., rust lines, exposed hull sections normally underwater, debris fields, breaking waves on the hull). Do not interpret status yet—only catalog raw visual evidence.
+
+Step 2 — Determine State & Visual Grounding. Determine the vessel's state by evaluating these priority-ordered rules. You must explicitly name the matching rule AND cite the specific visual attribute/pixel area from Step 1 that proves it:
+  1. Touching seabed/shore/reef/rocks (not floating) but not mostly submerged? → aground
+  2. Else, overturned, upside down, or severely listing/tilted (>15 degrees)? → capsized
+  3. Else, active flames or significant smoke? → on_fire
+  4. Else, completely or mostly underwater? → sunken
+  5. Else (floating upright, intact, no distress) → good
+Note: If a vessel is listing but resting on rocks, Rule 1 wins. State which visual cues ruled out the higher-priority options.
+
+Step 3 — Identify Vessel Type. Reason from visible structural features (hull shape, superstructure, deck equipment, masts, cranes). Cross-reference with the provided RAG context if applicable to confirm or narrow down the type.
+
+Step 4 — Estimate Size & Scale Anchors. Identify at least one specific scale anchor in the image (e.g., doorways, railings, containers, nearby waves/shore features). Estimate the length, then assign a category: small (<10m), medium (10–50m), large (>50m). If no scale anchor is visible, explicitly note the lack of reference and state your uncertainty.
+
+Step 5 — Assess Cargo & Exposed Hazards. Note only cargo or structural material that is DIRECTLY VISIBLE. Do not infer cargo from vessel type. If no cargo is visible, use null.
+
+Step 6 — Assess Surroundings & Environmental Constraints. Describe the observable environment: water conditions (sea state), proximity to hazards (reefs, cliffs, shallow water), weather, and accessibility constraints for response vessels.
+
+Step 7 — Actionable Salvage Plan. Based on the State (Step 2) and Surroundings (Step 6), outline the immediate operational implications for a salvage or recovery crew. Focus on hull integrity, estimated depth/grounding severity, and the primary logistical hurdle (e.g., "requires heavy-lift crane barge due to submersion," or "requires refloating during high tide").
+
+Step 8 — Confidence Self-Assessment. Evaluate your own analysis. Rate your confidence from 0.0 to 1.0 specifically for [state] and [vessel_type]. Base this score strictly on your Chain of Thought: if the visual evidence in Step 1 was blurry, ambiguous, or lacked scale anchors, lower the score accordingly. Briefly state the reason for your score.
+
+Step 9 — Output. Output ONLY a valid JSON object with exactly the keys below. Do not include any markdown formatting outside the JSON block.
+
+{
+  "description": "Clear, concise summary of the vessel, its damage, and its orientation.",
+  "state": "aground | capsized | on_fire | sunken | good",
+  "state_justification": "The specific visual attribute that triggered this state choice.",
+  "vessel_type": "string",
+  "size_estimate": "string (including category and scale anchor used)",
+  "cargo": "string or null",
+  "surroundings": "string",
+  "salvage_plan": "string (immediate operational steps/hurdles)",
+  "confidence_scores": {
+    "state_confidence": 0.00,
+    "type_confidence": 0.00,
+    "reasoning": "Why this confidence level was assigned based on image clarity/evidence."
+  }
+}

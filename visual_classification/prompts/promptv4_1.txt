@@ -1,0 +1,110 @@
+Analyze the provided UAV image of a vessel for the maritime disaster response pipeline. Work through each step carefully before producing the final JSON output. Keep each reasoning step to 2–4 sentences.
+
+Step 1 — Evidence Catalog. Describe only what you literally see. 
+List the vessel's orientation, visible hull sections, waterline position, 
+and any anomalies (rust lines, debris, breaking waves on hull, exposed 
+propeller or keel, smoke, flames). Do not interpret or classify yet — 
+only catalog raw visual observations.
+
+Step 2 — Visual Grounding Questions. Answer each question strictly 
+from your Step 1 observations. For each answer, cite the specific 
+visual evidence that supports it.
+
+  Q1: Is any part of the hull visibly in contact with land, rocks, 
+      reef, sand, or seabed? (yes/no + cite evidence from Step 1)
+
+  Q2: Is the main deck or superstructure submerged below the 
+      waterline, or is the hull broken apart with sections settling 
+      underwater? (yes/no + cite evidence from Step 1)
+
+  Q3: Is the vessel's keel or bottom hull visible above the 
+      waterline, indicating an inverted or severely rolled 
+      orientation? (yes/no + cite evidence from Step 1)
+
+  Q4: Are active flames or significant smoke visible on a vessel 
+      that appears otherwise upright and floating? 
+      (yes/no + cite evidence from Step 1)
+
+  Q5: Is the vessel floating upright, freely, and without visible 
+      damage or distress? (yes/no + cite evidence from Step 1)
+
+Step 3 — Determine State. Using ONLY your Q1–Q5 answers from Step 2, 
+apply these rules in order. The first matching rule wins. 
+State which rule matched and which visual evidence from Step 2 
+confirmed it. Also state which earlier rules you explicitly ruled out 
+and why.
+
+  Rule 1: Q1 = yes → aground
+  Rule 2: Q1 = no AND Q2 = yes → sunken
+  Rule 3: Q1 = no AND Q2 = no AND Q3 = yes → capsized
+  Rule 4: Q1 = no AND Q2 = no AND Q3 = no AND Q4 = yes → on_fire
+  Rule 5: Q1 = no AND Q2 = no AND Q3 = no AND Q4 = no AND Q5 = yes → good
+
+  Important: A vessel listing heavily while resting on rocks or reef 
+  → Rule 1 (aground) wins over Rule 3 (capsized). A vessel whose 
+  keel is visible but which is also partially submerged → Rule 2 
+  (sunken) wins over Rule 3 (capsized) only if the deck is 
+  demonstrably below the waterline.
+
+Step 4 — Identify Vessel Type. Reason from visible structural 
+features only: hull shape, superstructure profile, deck equipment, 
+masts, cranes, stern/bow configuration. Do not infer type from 
+cargo or surroundings.
+
+Step 5 — Estimate Size. Identify at least one specific scale anchor 
+visible in the image (doorways ~2m, railings ~1m height, shipping 
+containers 6m or 12m, crew members ~1.7m, standard hatch covers). 
+Estimate the vessel length and assign a category:
+  small (<10m) | medium (10–50m) | large (>50m)
+If no scale anchor is visible, explicitly state this and flag 
+your estimate as low confidence.
+
+Step 6 — Cargo Assessment. Note only cargo or deck load that is 
+directly visible. Do not infer from vessel type. 
+If nothing is visible, output null.
+
+Step 7 — Surroundings. Describe the observable environment only: 
+water conditions (sea state, wave height), proximity to shore or 
+hazards (reefs, cliffs, shallow water indicators), weather 
+visibility, and presence of other vessels. Do not include 
+operational or salvage implications here.
+
+Step 8 — Recovery Considerations. Based on your State (Step 3) 
+and Surroundings (Step 7), state the primary operational hurdle 
+for a response crew. Address hull accessibility, estimated 
+depth or grounding severity, and the single most important 
+logistical constraint (e.g., tidal window, crane requirement, 
+approach vector limitation). Keep this grounded in your 
+visual evidence — do not speculate beyond what the image supports.
+
+Step 9 — Confidence Self-Assessment. Rate your confidence 
+from 0.0 to 1.0 for [state] and [vessel_type] separately. 
+Base this score strictly on the quality of visual evidence 
+in Step 1 and the certainty of your Q1–Q5 answers in Step 2. 
+Lower the score if: the image is low resolution or partially 
+occluded, no scale anchors were found, Q answers were uncertain, 
+or multiple rules in Step 3 were plausible simultaneously.
+
+Step 10 — Output. After completing all steps above, output ONLY 
+a valid JSON object with exactly the keys below. 
+Do not include markdown formatting, code fences, or any text 
+outside the JSON object.
+
+{
+  "description": "Concise summary of vessel, damage, and orientation.",
+  "state": "aground | capsized | on_fire | sunken | good",
+  "state_justification": "The Q-answer and visual attribute that 
+                          triggered this state classification.",
+  "vessel_type": "string",
+  "size_estimate": "string — include category and scale anchor used, 
+                   or flag as low confidence if no anchor found.",
+  "cargo": "string or null",
+  "surroundings": "string",
+  "recovery_considerations": "string",
+  "confidence_scores": {
+    "state_confidence": 0.00,
+    "type_confidence": 0.00,
+    "reasoning": "string — specific reason based on image clarity 
+                 and evidence quality."
+  }
+}
