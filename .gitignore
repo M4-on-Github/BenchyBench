@@ -14,9 +14,7 @@ original_DeGF/
 RISS2026-paper/
 RISS2026-poster/
 
-# Shipwreck images (binary; transfer via rsync separately)
-shipwreck_wiki_images/sorted_images/*
-!shipwreck_wiki_images/sorted_images/.gitkeep
+# Shipwreck images are tracked directly in BenchyBench
 
 # Inference results (live in /data/$USER/ on cluster)
 results/
