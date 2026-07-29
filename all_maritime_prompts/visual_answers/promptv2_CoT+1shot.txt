@@ -1,0 +1,61 @@
+Analyze the provided image of a vessel. Work through your reasoning step by step
+before producing the final structured output. Keep each reasoning step to roughly
+2–4 sentences.
+
+Step 1 — Observe. Describe what you literally see: the vessel, its orientation,
+the water, surroundings, lighting, and any visible damage, smoke, or anomalies.
+Do not interpret yet — only catalog what is visible.
+
+Step 2 — Determine state. Apply these rules IN ORDER. State which rule matches,
+why, and which earlier rules you ruled out (the rules are priority-ordered, so an
+earlier match wins even if a later one also seems to apply):
+  1. Resting on or touching seabed/shore/reef/rocks (not floating) but not mostly
+     submerged? → aground
+  2. Else, overturned, upside down, or severely listing/tilted? → capsized
+  3. Else, active flames or significant smoke? → on_fire
+  4. Else, completely or mostly underwater? → sunken
+  5. Else (floating upright, intact, no distress) → good
+  Note: a severely listing vessel is `capsized` UNLESS you can also see it is
+  grounded, in which case rule 1 takes priority. Justify which applies.
+
+Step 3 — Identify vessel type. Reason from visible features (hull shape,
+superstructure, deck equipment, masts, cranes, armament) to a type.
+
+Step 4 — Estimate size. Anchor your estimate to visible reference points:
+people (~1.7m), standard doors/hatches (~2m), shipping containers (6m or 12m),
+railings, vehicles, nearby vessels. Estimate length, then assign a category:
+small (<10m), medium (10–50m), large (>50m). If no reference points are visible,
+say so and give your best approximation.
+
+Step 5 — Assess cargo. Note only cargo that is DIRECTLY VISIBLE (deck load,
+containers, exposed bulk material). Do not infer cargo from the vessel type.
+If none is visible, use null.
+
+Step 6 — Assess surroundings. Describe the observable environment only: water
+conditions, proximity to shore, weather, other vessels, visible hazards. Keep
+operational/salvage implications out of this step.
+
+Step 7 — Recovery considerations. Reason about the operational implications for
+salvage: hull integrity, accessibility, estimated depth, structural damage, and
+urgency indicators. (This is the "so what" of Step 6 — do not just repeat the
+environment.)
+
+Step 8 — Output. After your reasoning, output ONLY a valid JSON object with
+exactly these fields and nothing else:
+description, state, vessel_type, size_estimate, cargo, surroundings,
+recovery_considerations.
+
+Example output object:
+{
+  "description": "A large bulk carrier hard aground on a rocky shoreline, hull resting on the rocks and listing ~30 degrees to starboard, bow pointed toward the beach.",
+  "state": "aground",
+  "vessel_type": "bulk carrier",
+  "size_estimate": "large (~150-200m, scaled from deck crane and hatch covers)",
+  "cargo": null,
+  "surroundings": "rocky shoreline, moderate wave action, overcast sky, no rescue vessels visible",
+  "recovery_considerations": "hull appears intact on the exposed starboard side; beach-side approach accessible at low tide; tidal window may permit a refloat attempt; seaward salvage tug likely required"
+}
+
+Now analyze the provided image.
+
+###change step 8/ RAG context?? / LLM/VLM confidence score based on CoT?? // plan // based off off what attr in img?? in terms of messing with pipeline - ship states

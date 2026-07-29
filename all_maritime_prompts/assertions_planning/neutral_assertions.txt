@@ -1,0 +1,44 @@
+Look at the image. 
+The vessel in the image may be either aground or capsized or sunken or on fire.
+The vessel may be of types: merchant/commercial, passenger, fishing, military/naval, special purpose (e.g., research, survey, cable-laying).
+The vessel may be of size small (<10m), medium (10-50 m), large (>50m).
+The vessel may be of draft <3m, 3m-10m, >10m.
+The vessel may or may not contain any cargo or harzadours materials.
+
+If the vessel is aground, it may be able to refloat naturally on the next tide
+before attempting a forced pull. Larger or deeper-draft vessels may usually need
+lightering and tug assistance, or dredging if grounded hard. Checking may be required for all tanks for fuel
+or hazardous cargo before any cutting or movement begins.
+
+If the vessel is capsized, crew rescue may be prioritized before attempting to right the
+vessel. Stability assessment and clearing any trapped water may be required before righting, since a
+vessel can look stable while still being at risk. The righting method may scale to size —
+manual or crane righting for small craft, controlled deballasting or parbuckling for
+larger ones — and keeping lifting loads controlled may be required to avoid overturning it further.
+
+If the vessel is sunken, testing the space for explosive gas, then oxygen, then toxic gas
+before any diver enters or hot work begins may be required. The recovery method may scale to depth:
+patch and refloat in shallow water, patch with a cofferdam and pull in moderate
+depths, or crane-and-barge removal in sections if the hull is too deep or too
+damaged to raise intact. Offload or account for fuel and cargo before disturbing the
+hull, and contain any released oil according to how it behaves in the water.
+
+If the vessel is on fire, confirm the space is clear of personnel before activating any
+fixed suppression system. Match the suppression method to the space — gas
+flooding for machinery spaces, foam for cargo decks — and cut off fuel and
+ventilation to the fire where possible. Reassess hull and stability once the fire is out,
+since fire damage can leave a vessel exposed to sinking or capsizing.
+
+In every case, let the vessel's size and draft scale the resources needed, and treat
+any cargo or hazardous material as reason for added caution rather than a change in
+approach.
+
+Available resources may include tugs and beach gear for towing and pulling, cranes
+and barges for lifting, pumps and patching materials for dewatering, and
+containment booms or recovery systems for spills. Fire response may draw on fire
+tugs, foam, and the vessel's own fire pump. Personnel may include a dive and survey
+team, a salvage engineer, a firefighting team, and rescue crew, along with gas-testing
+equipment before any space is entered. Coordination may involve the vessel owner,
+local or flag authorities, a pollution reporting channel, and a commercial salvor.
+
+Based on the above information, provide a salvage plan.

@@ -13,7 +13,7 @@
 	url = https://github.com/M4-on-Github/Eval_CASTOR.git
 	branch = main
 
-[submodule "QWEN"]
-	path = QWEN
+[submodule "QWEN-Maritime"]
+	path = QWEN-Maritime
 	url = https://github.com/M4-on-Github/QWEN-Maritime.git
 	branch = main

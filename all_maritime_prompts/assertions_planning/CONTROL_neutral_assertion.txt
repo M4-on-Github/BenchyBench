@@ -1,0 +1,72 @@
+Look at the image.
+The vessel in the image may be either aground or capsized or sunken or on fire.
+The vessel may be of types: merchant/commercial, passenger, fishing, military/naval, special purpose (e.g., research, survey, cable-laying).
+The vessel may be of size small (<10m), medium (10-50m), large (>50m).
+The vessel may be of draft <3m, 3m-10m, >10m.
+The vessel may or may not contain cargo.
+The vessel may or may not contain hazardous materials.
+
+If the vessel is aground, responders may first check whether it can be freed once conditions improve.
+Weather and sea state may need to calm before any pulling attempt is made.
+A larger vessel may be harder to move and may need more powerful equipment.
+The seabed the vessel is resting on may affect how difficult it is to free.
+Cutting or reducing weight aboard may help make the vessel easier to move.
+The hull may need inspection for damage before any attempt to move the vessel.
+Nearby vessels or structures may need to be considered when planning how to free it.
+Local conditions such as current and visibility may affect how the operation is carried out.
+The vessel's position may need to be monitored throughout the operation in case conditions change.
+The timing of the tide may make the difference between a successful and unsuccessful attempt.
+Ropes, chains, or cables used to pull the vessel may need to be strong enough for its size and weight.
+
+If the vessel is capsized, people aboard may need to be accounted for and rescued first.
+Rescuers may approach carefully to avoid worsening the vessel's position.
+The vessel's stability may need to be considered before attempting to turn it back over.
+Water inside the hull may make the vessel harder to right and may need to be addressed.
+A smaller vessel may be easier to right than a larger one, which may need heavier equipment.
+The method used to right the vessel may depend on its size and how it is lying in the water.
+Care may be needed to avoid further damage while turning the vessel upright.
+The surrounding water depth may limit which equipment can be used to right the vessel.
+Once upright, the vessel may still need to be checked for further flooding or damage before it can be moved.
+
+If the vessel is sunken, the area may need to be checked for hazards before anyone enters the water.
+The depth of the wreck may determine what recovery method is practical.
+The vessel may need to be inspected before any attempt is made to raise it.
+Fuel or cargo aboard may need to be dealt with before the hull is disturbed.
+Any pollution from the wreck may need to be managed appropriately.
+Equipment may be positioned to help detect and respond to any leaking material.
+Recovering the vessel may involve careful planning given the conditions underwater.
+The decision to raise or leave the wreck in place may depend on its condition and location.
+Weather and sea conditions at the surface may limit how long recovery work can continue each day.
+The age and condition of the wreck may affect how carefully it needs to be handled during recovery.
+
+If the vessel is on fire, people aboard may need to be moved to safety before firefighting begins.
+The type of fire may determine what firefighting method is most effective.
+Fuel and other flammable material near the fire may need to be managed.
+Airflow to the fire may need to be limited where possible.
+Equipment on hand may need to be checked to confirm it is ready for use.
+Support vessels may assist by spraying water on the fire from outside.
+The fire may need to be brought fully under control before anyone re-boards.
+The vessel may need to be checked over again once the fire is out.
+Smoke and heat may make it difficult to assess damage until the fire is fully out.
+The size of the fire may determine how many crews and how much equipment are needed to bring it under control.
+
+In general, the vessel's size and draft may affect how much equipment is needed.
+Any cargo or hazardous material aboard may call for extra care during the response.
+
+Available resources may include tugboats for towing.
+Available resources may include cranes for lifting.
+Available resources may include barges to help with heavy loads.
+Available resources may include pumps to remove water.
+Available resources may include patching materials for hull damage.
+Available resources may include booms to help contain any spilled material.
+Available resources may include fireboats to help fight fires from the water.
+Available resources may include foam or extinguishing agents for firefighting.
+Response crew may include divers to inspect the vessel underwater.
+Response crew may include engineers to help plan the operation.
+Response crew may include firefighters trained for shipboard fires.
+Response crew may include rescue personnel to assist anyone aboard.
+Coordination may involve the vessel's owner, local authorities, or a professional response company.
+
+Based on the above information, provide a salvage plan.
+The plan should be formatted as a numbered sequence of steps to perform, in the order they should be carried out.
+Each step should state what vessel, resource, or response crew is used to perform it.

@@ -1,0 +1,1 @@
+Is the vessel aground, capsized, sunken, on_fire, or good? Answer with only one of the states.

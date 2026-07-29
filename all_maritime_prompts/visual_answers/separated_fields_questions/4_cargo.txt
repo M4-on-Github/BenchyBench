@@ -1,0 +1,1 @@
+What specific cargo is directly visible on the vessel? If none, state "none".

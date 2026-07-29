@@ -1,0 +1,1 @@
+What is the size estimate of the vessel: small(<10m) or medium(10-50m) or large (>50m). Answer with only one plausiable choice of size.

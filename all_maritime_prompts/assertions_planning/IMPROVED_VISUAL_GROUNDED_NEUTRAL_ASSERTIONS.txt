@@ -1,0 +1,61 @@
+Look at the image.
+The vessel in the image may be either aground or capsized or sunken or on fire.
+The vessel may be of types: merchant/commercial, passenger, fishing, military/naval, special purpose (e.g., research, survey, cable-laying).
+The vessel may be of size small (<10m), medium (10-50m), large (>50m).
+The vessel may be of draft <3m, 3m-10m, >10m.
+The vessel may or may not contain cargo.
+The vessel may or may not contain hazardous materials.
+
+If the vessel is aground, it may be able to refloat naturally on the next tide.
+Larger vessels may need lightering to reduce weight before refloat.
+Deeper-draft vessels may need tug assistance to refloat.
+A hard grounding may need dredging to clear a channel before refloat.
+All tanks may need checking for fuel before any cutting or movement begins.
+All tanks may need checking for hazardous cargo before any cutting or movement begins.
+The pulling force needed to free the vessel may depend on the ground reaction and a friction coefficient specific to the seabed type (mud, sand, coral, or rock).
+A neutral loading point may exist on the hull where shifting weight has no effect on the ground reaction, so removed weight may need to target other areas to reduce strain.
+A dedicated tide gauge may be used near the site to track how the ground reaction changes as the tide rises and falls.
+
+If the vessel is capsized, crew rescue may be prioritized before attempting to right the vessel.
+Crew exiting a capsized hull may use a hand-over-hand technique without kicking, to avoid injuring the next person out.
+A stability check against minimum righting-arm and metacentric-height criteria may be required before righting, rather than relying on how the vessel looks.
+Trapped water may need to be cleared before righting.
+The righting method may scale to size — manual or crane righting for small craft, controlled deballasting or parbuckling for larger ones.
+Refloating method may differ for a fully inverted hull (upside-down refloating) versus one lying on its side (side refloating).
+Lifting loads may need to be kept controlled to avoid overturning the vessel further.
+
+If the vessel is sunken, the space may need sequential testing for explosive gas, then oxygen, then toxic gas, before any diver enters or hot work begins.
+The recovery method may scale to depth: patch and refloat in shallow water, patch with a cofferdam and pull in moderate depths, or crane-and-barge removal in sections if the hull is too deep or too damaged to raise intact.
+Fuel may need to be offloaded before disturbing the hull.
+Cargo may need to be accounted for before disturbing the hull.
+Any released oil may need containment matched to how it behaves in the water — pooling at the surface, suspended in the water column, or settled on the bottom.
+Side-scan or electro-acoustic sonar may be used to locate submerged oil that isn't visible from the surface.
+Diver-directed recovery may be preferred over dredging in sensitive habitat, weighed through a net environmental benefit analysis.
+A legacy or abandoned wreck may be ranked for pollution risk using a standardized risk-ranking method before deciding whether to remove it.
+
+If the vessel is on fire, the affected space may need to be confirmed clear of personnel before activating any fixed suppression system.
+A machinery space fire may be suppressed by gas flooding; a cargo deck fire may be suppressed by foam.
+A fixed CO2 system may require a two-stage release with a pre-discharge alarm before gas floods the space.
+A fire involving water-soluble fuel or cargo may require alcohol-resistant foam rather than standard foam.
+The emergency fire pump's capacity may need confirming before committing a team to fight the fire directly.
+Fireboat monitors may be used for external boundary cooling of a space adjacent to the fire.
+A superheated, smoldering space may risk backdraft if ventilated or opened before it is cooled.
+The hull and stability may need reassessment once the fire is out, since fire damage can leave a vessel exposed to sinking or capsizing.
+
+In every case, the vessel's size and draft may scale the resources needed.
+Any cargo or hazardous material present may be reason for added caution rather than a change in approach.
+
+Available resources may include harbor tugs for towing in sheltered water, ocean-going salvage tugs for towing in open water, beach gear (anchor-wire-chain purchase systems) for controlled pulling, floating cranes for lifting, barges for sectional removal or lightering, submersible pumps for dewatering, cofferdams or patching materials for hull repair, containment booms or skimmers for spill response, fireboats with external monitors for boundary cooling, and alcohol-resistant foam concentrate for polar-solvent fires.
+Response crew may include a dive and survey team for underwater assessment, a salvage engineer or naval architect for stability checks before righting or lifting, a firefighting team for suppression and boundary cooling, rescue swimmers or boat crew for crew recovery, and an ordnance or hazmat specialist for older military or unknown-cargo vessels.
+Coordination may involve the vessel owner, local or flag authorities, a pollution reporting channel, or a commercial salvor.
+
+Before writing the plan, look at the image again and answer the following about what is actually visible:
+- Vessel condition (aground / capsized / sunken / on fire)
+- Hull position or angle
+- Waterline relative to the hull
+- Visible fire, smoke, or damage
+- Visible cargo or containers
+
+Base the plan on these specific visual details, not on general assumptions about vessels in this condition.
+Provide a salvage plan as a numbered sequence of steps to perform, in the order they should be carried out.
+Each step should state what vessel, resource, or response crew is used to perform it.

@@ -1,0 +1,11 @@
+Look at the image.
+The vessel in the image may be either aground or capsized or sunken or on fire.
+The vessel may be of types: merchant/commercial, passenger, fishing, military/naval, special purpose (e.g., research, survey, cable-laying).
+The vessel may be of size small (<10m), medium (10-50m), large (>50m).
+The vessel may be of draft <3m, 3m-10m, >10m.
+The vessel may or may not contain cargo.
+The vessel may or may not contain hazardous materials.
+
+Based on the above information, provide a salvage plan.
+The plan should be formatted as a numbered sequence of steps to perform, in the order they should be carried out.
+Each step should state what vessel, resource, or response crew is used to perform it.

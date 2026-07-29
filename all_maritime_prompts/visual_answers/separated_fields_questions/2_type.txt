@@ -1,0 +1,1 @@
+What is the type of the main vessel present in the image? Answer with the vessel type only.

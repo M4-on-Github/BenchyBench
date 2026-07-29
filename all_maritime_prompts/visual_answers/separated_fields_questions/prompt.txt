@@ -1,0 +1,6 @@
+Is the vessel aground, capsized, sunken, on_fire, or good? Answer with only one of the states.
+What is the type of the main vessel present in the image? Answer with the vessel type only.
+What is the size estimate of the vessel: small(<10m) or medium(10-50m) or large (>50m). Answer with only one plausiable choice of size.
+What specific cargo is directly visible on the vessel? If none, state "none".
+What are the observed environmental conditions surrounding the vessel? Describe thing such as water conditions, proximity to shorte or hazards (reefs, cliffs, shallow water indicators) and weather visibility and etc.
+Based on the main vessel's current state and its environmental surroundings, what  is the primary operational hurdle and important logistical constraints (eg. tidal windows, crane requirements, approach vector limitations) for a response crew.

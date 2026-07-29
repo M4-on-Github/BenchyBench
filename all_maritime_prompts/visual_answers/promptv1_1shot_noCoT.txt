@@ -1,0 +1,22 @@
+Analyze this image of a vessel and provide a structured assessment using the fields below:
+
+- description: Describe relevant details about the image.
+- state: The vessel's current condition — select one of: aground | capsized | on_fire | sunken | good (use the following rules: if the vessel is resting on or touching the seabed, shore, reef, or rocks (not floating) but is not completely/mostly submerged, classify it as "aground"; else if the vessel is overturned, upside down, or severely listing/tilted, classify it as "capsized"; else if the vessel has active flames or significant smoke, classify it as "on_fire"; else if the vessel is completely or mostly underwater/submerged, classify it as "sunken"; else (if the vessel is floating upright, intact, and showing no signs of distress or damage), classify it as "good")
+- vessel_type: Type of vessel (e.g. cargo ship, fishing boat, tanker, sailboat, tugboat, warship).
+- size_estimate: Estimated size category and approximate length (small <10m, medium 10–50m, large >50m).
+- cargo: Any visible cargo or deck load, or null if none apparent.
+- surroundings: Notable environmental or situational context (water conditions, proximity to shore, weather, other vessels, visible hazards).
+- recovery_considerations: Key attributes relevant to salvage or recovery (hull integrity, accessibility, estimated depth, structural damage, urgency indicators).
+
+Output ONLY a valid JSON object with no explanation or extra text. Example:
+{
+  "description": "A large bulk carrier listing 45 degrees to starboard, partially submerged on its port side in shallow coastal waters.",
+  "state": "aground",
+  "vessel_type": "bulk carrier",
+  "size_estimate": "large (~150-200m)",
+  "cargo": "dry bulk material, possibly grain or ore",
+  "surroundings": "rocky shoreline, moderate wave action, overcast sky, no rescue vessels visible",
+  "recovery_considerations": "hull appears intact on the exposed starboard side, beach-side approach is accessible, tidal window may be viable for refloat attempt, salvage tug required from seaward"
+}
+
+Now analyze the provided image:

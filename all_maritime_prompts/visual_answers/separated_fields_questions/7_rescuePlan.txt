@@ -1,0 +1,1 @@
+Based on the main vessel's current state, come up with a plan for rescue - like what ships you would need, limitations, action plan, etc.

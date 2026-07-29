@@ -1,0 +1,1 @@
+Based on the main vessel's current state and its environmental surroundings, what  is the primary operational hurdle and important logistical constraints (eg. tidal windows, crane requirements, approach vector limitations) for a response crew.
