@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from __future__ import annotations
 """
 visual_classification — Phase 3: bridge to Eval_CASTOR judge panel
 

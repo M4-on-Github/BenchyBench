@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from __future__ import annotations
 """
 visual_classification — Phase 2: regex-based label extraction and metrics
 

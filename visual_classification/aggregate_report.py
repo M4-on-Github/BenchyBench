@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from __future__ import annotations
 """
 visual_classification — Phase 4: outcome analysis and HTML report
 
