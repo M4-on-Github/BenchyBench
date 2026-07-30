@@ -39,9 +39,9 @@ def _resolve_root() -> Path:
 def _count_active_jobs(user):
     result = subprocess.run(
         ["squeue", "-u", user, "-h"],
-        capture_output=True, text=True
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE
     )
-    return len([l for l in result.stdout.strip().splitlines() if l.strip()])
+    return len([l for l in result.stdout.decode().strip().splitlines() if l.strip()])
 
 
 def sbatch(args, dry_run):
@@ -51,8 +51,8 @@ def sbatch(args, dry_run):
     if dry_run:
         # Return a synthetic job ID so downstream chaining still prints correctly
         return f"DRY{abs(hash(tuple(args))) % 100000:05d}"
-    result = subprocess.run(cmd, capture_output=True, text=True, check=True)
-    job_id = result.stdout.strip().split(";")[0]  # --parsable may include cluster name
+    result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+    job_id = result.stdout.decode().strip().split(";")[0]  # --parsable may include cluster name
     return job_id
 
 
