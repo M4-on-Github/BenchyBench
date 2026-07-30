@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-from __future__ import annotations
 """
 visual_classification — Phase 1: inference health check
 
@@ -49,19 +48,19 @@ _CLASS_PATTERNS = {
 }
 
 
-def normalize_state(text: str) -> str | None:
+def normalize_state(text):
     for cls, pat in _CLASS_PATTERNS.items():
         if pat.search(text):
             return cls
     return None
 
 
-def detect_repetition(text: str, ngram: int = 5, threshold: int = 3) -> bool:
+def detect_repetition(text, ngram = 5, threshold = 3):
     words = text.lower().split()
     if len(words) < ngram * threshold:
         return False
     grams = [" ".join(words[i:i+ngram]) for i in range(len(words)-ngram+1)]
-    seen: dict[str, int] = {}
+    seen = {}
     for g in grams:
         seen[g] = seen.get(g, 0) + 1
         if seen[g] >= threshold:
@@ -69,7 +68,7 @@ def detect_repetition(text: str, ngram: int = 5, threshold: int = 3) -> bool:
     return False
 
 
-def detect_hedge(text: str) -> bool:
+def detect_hedge(text):
     found = set()
     for cls, pat in _CLASS_PATTERNS.items():
         if pat.search(text):
@@ -77,14 +76,14 @@ def detect_hedge(text: str) -> bool:
     return len(found) > 1
 
 
-def detect_refusal(text: str) -> bool:
+def detect_refusal(text):
     keywords = ["cannot", "can't", "unable to determine", "unclear", "not sure",
                 "impossible to tell", "no image", "no photo", "no picture"]
     lower = text.lower()
     return any(k in lower for k in keywords)
 
 
-def load_records(output_root: Path) -> list[dict]:
+def load_records(output_root):
     infer_dir = output_root / "inference"
     records = []
     for path in sorted(infer_dir.glob("answers_*.jsonl")):
@@ -100,10 +99,10 @@ def load_records(output_root: Path) -> list[dict]:
     return records
 
 
-def load_meta(output_root: Path) -> dict[str, dict]:
+def load_meta(output_root):
     """Return {answers_filename_stem: meta_dict} from sidecar meta_*.json files."""
     infer_dir = output_root / "inference"
-    meta_map: dict[str, dict] = {}
+    meta_map = {}
     for path in sorted(infer_dir.glob("meta_*.json")):
         try:
             data = json.loads(path.read_text(encoding="utf-8"))
@@ -114,7 +113,7 @@ def load_meta(output_root: Path) -> dict[str, dict]:
     return meta_map
 
 
-def _combo_key(rec: dict, meta_by_stem: dict) -> tuple:
+def _combo_key(rec: dict, meta_by_stem: dict):
     """(model, method, prompt_stem)"""
     model = rec.get("model_tag") or rec.get("model_id", "unknown")
     method = rec.get("method", "unknown")
@@ -123,7 +122,7 @@ def _combo_key(rec: dict, meta_by_stem: dict) -> tuple:
     return (model, method, prompt_stem)
 
 
-def annotate_records(records: list[dict]) -> list[dict]:
+def annotate_records(records):
     lengths = [len(rec.get("text", "")) for rec in records if rec.get("text")]
     global_mean = mean(lengths) if lengths else 0
     global_std = stdev(lengths) if len(lengths) > 1 else 0
@@ -140,8 +139,8 @@ def annotate_records(records: list[dict]) -> list[dict]:
     return records
 
 
-def per_combo_stats(records: list[dict]) -> dict:
-    combos: dict[tuple, list] = defaultdict(list)
+def per_combo_stats(records):
+    combos = defaultdict(list)
     for rec in records:
         model = rec.get("model_tag") or rec.get("model_id", "unknown")
         method = rec.get("method", "unknown")
@@ -158,7 +157,7 @@ def per_combo_stats(records: list[dict]) -> dict:
         parse_fail_rate = n_fail / n if n else 0
 
         # Label distribution
-        label_counts: dict[str, int] = defaultdict(int)
+        label_counts = defaultdict(int)
         for r in recs:
             lbl = r["_health"]["parsed_label"]
             if lbl:
@@ -168,7 +167,7 @@ def per_combo_stats(records: list[dict]) -> dict:
 
         # Self-inconsistency: per image, how many distinct labels across this combo's prompts
         # (only meaningful across multiple prompt_stems; within a combo it's all one prompt)
-        per_image: dict[str, set] = defaultdict(set)
+        per_image = defaultdict(set)
         for r in recs:
             img = r.get("image", "")
             lbl = r["_health"]["parsed_label"]

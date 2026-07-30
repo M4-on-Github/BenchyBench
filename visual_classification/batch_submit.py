@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-from __future__ import annotations
 """
 visual_classification — orchestration entry point
 
@@ -37,7 +36,7 @@ def _resolve_root() -> Path:
     return Path(__file__).resolve().parent.parent
 
 
-def _count_active_jobs(user: str) -> int:
+def _count_active_jobs(user):
     result = subprocess.run(
         ["squeue", "-u", user, "-h"],
         capture_output=True, text=True
@@ -45,7 +44,7 @@ def _count_active_jobs(user: str) -> int:
     return len([l for l in result.stdout.strip().splitlines() if l.strip()])
 
 
-def sbatch(args: list[str], dry_run: bool) -> str:
+def sbatch(args, dry_run):
     """Submit an sbatch job. Returns bare job ID string."""
     cmd = ["sbatch", "--parsable"] + args
     print("  " + " ".join(cmd))
@@ -57,7 +56,7 @@ def sbatch(args: list[str], dry_run: bool) -> str:
     return job_id
 
 
-def wait_for_slot(user: str, max_concurrent: int, dry_run: bool) -> None:
+def wait_for_slot(user, max_concurrent, dry_run):
     while not dry_run and _count_active_jobs(user) >= max_concurrent:
         print(f"  [throttle] {_count_active_jobs(user)} active jobs >= {max_concurrent}, sleeping 60s …")
         time.sleep(60)

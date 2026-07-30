@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-from __future__ import annotations
 """
 visual_classification — Phase 3: bridge to Eval_CASTOR judge panel
 
@@ -29,12 +28,12 @@ import sys
 from pathlib import Path
 
 
-def load_per_record_csv(per_record_path: Path) -> list[dict]:
+def load_per_record_csv(per_record_path):
     with per_record_path.open(encoding="utf-8") as f:
         return list(csv.DictReader(f))
 
 
-def build_judge_records(rows: list[dict]) -> list[dict]:
+def build_judge_records(rows):
     """
     Build minimal records for the judge panel. Each record must have at least:
       image  — the GT join key (e.g. "aground/00017.jpg")
@@ -43,7 +42,7 @@ def build_judge_records(rows: list[dict]) -> list[dict]:
     We also carry model_tag, method, prompt_stem through for post-merge
     even though the judge ignores extra fields.
     """
-    seen: set[tuple] = set()
+    seen = set()
     records = []
     for row in rows:
         image = row.get("image", "")

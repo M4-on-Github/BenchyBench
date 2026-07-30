@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-from __future__ import annotations
 """
 visual_classification — Phase 4: outcome analysis and HTML report
 
@@ -43,14 +42,14 @@ VALID_STATES = ["aground", "capsized", "on_fire", "sunken"]
 # Shared I/O helpers
 # ─────────────────────────────────────────────────────────────────────────────
 
-def read_csv(path: Path) -> list[dict]:
+def read_csv(path):
     if not path.exists():
         return []
     with path.open(encoding="utf-8") as f:
         return list(csv.DictReader(f))
 
 
-def write_csv(path: Path, rows: list[dict]) -> None:
+def write_csv(path, rows):
     if not rows:
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text("")
@@ -62,7 +61,7 @@ def write_csv(path: Path, rows: list[dict]) -> None:
         writer.writerows(rows)
 
 
-def _bool(v) -> bool:
+def _bool(v):
     if isinstance(v, bool):
         return v
     return str(v).strip().lower() in ("true", "1", "yes")
@@ -72,7 +71,7 @@ def _bool(v) -> bool:
 # Phase outcome — helpers
 # ─────────────────────────────────────────────────────────────────────────────
 
-def load_judge_consensus(eval_castor_root: Path, run_name: str) -> dict[str, dict]:
+def load_judge_consensus(eval_castor_root, run_name):
     """
     Load judge consensus JSONL and return a lookup keyed on
     (image, model_tag, method, prompt_stem) → {judge_verdict, judge_score, judge_state_correct}.
@@ -109,7 +108,7 @@ def load_judge_consensus(eval_castor_root: Path, run_name: str) -> dict[str, dic
     return records
 
 
-def compute_per_image_tiers(rows: list[dict]) -> list[dict]:
+def compute_per_image_tiers(rows):
     """
     Group rows by image, compute per-image tier and sub-types.
 
@@ -122,7 +121,7 @@ def compute_per_image_tiers(rows: list[dict]) -> list[dict]:
       prompt_split      same model+method, different answers across prompts
       combo_split       doesn't fit neatly into above categories
     """
-    image_groups: dict[str, list] = defaultdict(list)
+    image_groups = defaultdict(list)
     for row in rows:
         image_groups[row["image"]].append(row)
 
@@ -153,7 +152,7 @@ def compute_per_image_tiers(rows: list[dict]) -> list[dict]:
         sub_types = []
         if tier == 3:
             # model_split: does correctness vary by model (same method+prompt)?
-            mp_groups: dict[tuple, list] = defaultdict(list)
+            mp_groups = defaultdict(list)
             for r in image_rows:
                 mp_groups[(r["method"], r["prompt_stem"])].append(r)
             for (meth, ps), grp in mp_groups.items():
@@ -254,19 +253,19 @@ def compute_per_image_tiers(rows: list[dict]) -> list[dict]:
     return results
 
 
-def compute_prompt_stability(rows: list[dict]) -> list[dict]:
+def compute_prompt_stability(rows):
     """
     Kendall's tau correlation of prompt accuracy rankings across (model × method) combos.
     Returns rows for eval/outcome_analysis/prompt_stability.csv.
     """
     # Build {(model, method): {prompt_stem: accuracy}} mapping
-    combo_prompt_acc: dict[tuple, dict] = defaultdict(lambda: defaultdict(list))
+    combo_prompt_acc = defaultdict(lambda: defaultdict(list))
     for row in rows:
         key = (row["model_tag"], row["method"])
         combo_prompt_acc[key][row["prompt_stem"]].append(_bool(row.get("regex_correct", False)))
 
     # Average accuracy per (model, method, prompt)
-    combo_accs: dict[tuple, dict] = {}
+    combo_accs = {}
     for combo, prompt_recs in combo_prompt_acc.items():
         combo_accs[combo] = {ps: mean(vals) for ps, vals in prompt_recs.items()}
 
@@ -276,7 +275,7 @@ def compute_prompt_stability(rows: list[dict]) -> list[dict]:
         return []
 
     # Compute Kendall's tau between each pair of combos
-    def _kendall_tau(rank_a: list, rank_b: list) -> float:
+    def _kendall_tau(rank_a: list, rank_b: list):
         n = len(rank_a)
         concordant = discordant = 0
         for i in range(n):
@@ -306,7 +305,7 @@ def compute_prompt_stability(rows: list[dict]) -> list[dict]:
     return results
 
 
-def compute_clip_similarities(rows: list[dict], benchybench_root: Path) -> dict[str, float]:
+def compute_clip_similarities(rows, benchybench_root):
     """
     Compute CLIP cosine similarity between original shipwreck image and DeGF SD image.
     Only runs for DeGF rows that have a valid degf_sd_image_path.
@@ -331,7 +330,7 @@ def compute_clip_similarities(rows: list[dict], benchybench_root: Path) -> dict[
     model.eval()
 
     image_dir = benchybench_root / "shipwreck_wiki_images" / "sorted_images"
-    results: dict[str, float] = {}
+    results = {}
 
     with torch.no_grad():
         for row in degf_rows:
@@ -359,7 +358,7 @@ def compute_clip_similarities(rows: list[dict], benchybench_root: Path) -> dict[
 # Phase report — HTML generation
 # ─────────────────────────────────────────────────────────────────────────────
 
-def _img_to_b64(path: Path, size: int = 150) -> str:
+def _img_to_b64(path, size = 150):
     """Load image, thumbnail to {size}px, return base64 data URI."""
     try:
         from PIL import Image as PilImage
@@ -373,7 +372,7 @@ def _img_to_b64(path: Path, size: int = 150) -> str:
         return ""
 
 
-def _acc_table_html(summary_rows: list[dict]) -> str:
+def _acc_table_html(summary_rows):
     combos_by_model = defaultdict(list)
     for row in summary_rows:
         combos_by_model[row["model_tag"]].append(row)
@@ -412,7 +411,7 @@ def _acc_table_html(summary_rows: list[dict]) -> str:
     return "\n".join(html)
 
 
-def _tier_summary_html(per_image_rows: list[dict]) -> str:
+def _tier_summary_html(per_image_rows):
     tier_counts = defaultdict(int)
     sub_counts = defaultdict(int)
     for row in per_image_rows:
@@ -447,12 +446,12 @@ def _tier_summary_html(per_image_rows: list[dict]) -> str:
     return "\n".join(html)
 
 
-def _confusion_html(summary_rows: list[dict], per_record_rows: list[dict]) -> str:
+def _confusion_html(summary_rows, per_record_rows):
     # One confusion matrix per model (averaged across methods and prompts)
     html = []
     for model in sorted({r["model_tag"] for r in per_record_rows}):
         model_rows = [r for r in per_record_rows if r["model_tag"] == model]
-        counts: dict[str, dict] = {s: {s2: 0 for s2 in VALID_STATES + ["UNPARSEABLE"]}
+        counts = {s: {s2: 0 for s2 in VALID_STATES + ["UNPARSEABLE"]}
                                     for s in VALID_STATES}
         for r in model_rows:
             gt = r.get("gt_label", "")
@@ -481,7 +480,7 @@ def _confusion_html(summary_rows: list[dict], per_record_rows: list[dict]) -> st
     return "\n".join(html)
 
 
-def _degf_firstpass_html(per_record_rows: list[dict]) -> str:
+def _degf_firstpass_html(per_record_rows):
     degf = [r for r in per_record_rows if r.get("method") == "degf"
             and r.get("degf_first_pass_label")]
     if not degf:
@@ -504,7 +503,7 @@ def _degf_firstpass_html(per_record_rows: list[dict]) -> str:
     return "\n".join(html)
 
 
-def _render_html_report(output_root: Path, run_name: str, benchybench_root: Path) -> str:
+def _render_html_report(output_root, run_name, benchybench_root):
     eval_dir = output_root / "eval"
     per_record_rows = read_csv(eval_dir / "regex" / "per_record.csv")
     summary_rows = read_csv(eval_dir / "regex" / "summary.csv")
@@ -596,7 +595,7 @@ section{margin-bottom:40px;padding-bottom:20px;border-bottom:1px solid #ddd}
     return html
 
 
-def _prompt_stab_html(rows: list[dict]) -> str:
+def _prompt_stab_html(rows):
     if not rows:
         return "<p>Not enough prompts for stability analysis (&lt;2).</p>"
     html = ["<table class='data-table'><thead><tr><th>Combo A</th><th>Combo B</th><th>Kendall's τ</th><th>N prompts</th></tr></thead><tbody>"]
@@ -609,7 +608,7 @@ def _prompt_stab_html(rows: list[dict]) -> str:
     return "\n".join(html)
 
 
-def _per_class_html(per_record_rows: list[dict]) -> str:
+def _per_class_html(per_record_rows):
     html = []
     for cls in VALID_STATES:
         cls_rows = [r for r in per_record_rows if r.get("gt_label") == cls]
@@ -626,7 +625,7 @@ def _per_class_html(per_record_rows: list[dict]) -> str:
 # Phase runners
 # ─────────────────────────────────────────────────────────────────────────────
 
-def run_outcome(output_root: Path, benchybench_root: Path, run_name: str | None):
+def run_outcome(output_root, benchybench_root, run_name):
     eval_dir = output_root / "eval"
     outcome_dir = eval_dir / "outcome_analysis"
     outcome_dir.mkdir(parents=True, exist_ok=True)
@@ -709,7 +708,7 @@ def run_outcome(output_root: Path, benchybench_root: Path, run_name: str | None)
     print("\nOutcome phase complete.")
 
 
-def run_report(output_root: Path, benchybench_root: Path, run_name: str):
+def run_report(output_root, benchybench_root, run_name):
     print(f"Generating HTML report for run: {run_name}")
     report_dir = output_root / "report"
     report_dir.mkdir(parents=True, exist_ok=True)

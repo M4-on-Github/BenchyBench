@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-from __future__ import annotations
 """
 visual_classification — Phase 2: regex-based label extraction and metrics
 
@@ -27,16 +26,16 @@ from pathlib import Path
 from statistics import mean, stdev, StatisticsError
 
 
-def _setup_eval_imports(benchybench_root: Path):
+def _setup_eval_imports(benchybench_root):
     eval_path = str(benchybench_root / "Eval_CASTOR")
     if eval_path not in sys.path:
         sys.path.insert(0, eval_path)
 
 
-def load_gt(benchybench_root: Path) -> dict[str, str]:
+def load_gt(benchybench_root):
     """Return {image: state} from human_gt.csv. Image key = 'class/filename.jpg'."""
     gt_path = benchybench_root / "Eval_CASTOR" / "human_ground_truth_label" / "human_gt.csv"
-    gt: dict[str, str] = {}
+    gt = {}
     with gt_path.open(encoding="utf-8") as f:
         reader = csv.DictReader(f)
         for row in reader:
@@ -45,7 +44,7 @@ def load_gt(benchybench_root: Path) -> dict[str, str]:
     return gt
 
 
-def load_inference_records(output_root: Path) -> list[dict]:
+def load_inference_records(output_root):
     """Load all answers_*.jsonl files. Attach source filename stem to each record."""
     infer_dir = output_root / "inference"
     records = []
@@ -64,10 +63,10 @@ def load_inference_records(output_root: Path) -> list[dict]:
     return records
 
 
-def load_meta_map(output_root: Path) -> dict[str, dict]:
+def load_meta_map(output_root):
     """Return {answers_stem: meta_dict} from sidecar meta_*.json files."""
     infer_dir = output_root / "inference"
-    meta_map: dict[str, dict] = {}
+    meta_map = {}
     for path in sorted(infer_dir.glob("meta_*.json")):
         try:
             data = json.loads(path.read_text(encoding="utf-8"))
@@ -79,7 +78,7 @@ def load_meta_map(output_root: Path) -> dict[str, dict]:
     return meta_map
 
 
-def extract_combo_fields(rec: dict, meta_map: dict) -> tuple[str, str, str]:
+def extract_combo_fields(rec: dict, meta_map: dict):
     """Return (model_tag, method, prompt_stem) for a record."""
     source_stem = rec.get("_source_stem", "")
     meta = meta_map.get(source_stem, {})
@@ -96,8 +95,8 @@ def extract_combo_fields(rec: dict, meta_map: dict) -> tuple[str, str, str]:
     return model_tag, method, prompt_stem
 
 
-def build_per_records(records: list[dict], gt: dict[str, str], normalize_state,
-                      meta_map: dict) -> list[dict]:
+def build_per_records(records, gt, normalize_state,
+                      meta_map: dict):
     """Build one output row per record with all per-record fields."""
     rows = []
     for rec in records:
@@ -173,7 +172,7 @@ def build_per_records(records: list[dict], gt: dict[str, str], normalize_state,
     return rows
 
 
-def populate_health_flags(rows: list[dict]) -> list[dict]:
+def populate_health_flags(rows):
     """Add health flags inline (reuses logic from health_check.py)."""
     import re
 
@@ -190,11 +189,11 @@ def populate_health_flags(rows: list[dict]) -> list[dict]:
     g_mean = mean(lengths) if lengths else 0
     g_std = stdev(lengths) if len(lengths) > 1 else 0
 
-    def _repetition(text: str, ngram=5, threshold=3) -> bool:
+    def _repetition(text, ngram=5, threshold=3):
         words = text.lower().split()
         if len(words) < ngram * threshold:
             return False
-        seen: dict[str, int] = {}
+        seen = {}
         for i in range(len(words) - ngram + 1):
             g = " ".join(words[i:i+ngram])
             seen[g] = seen.get(g, 0) + 1
@@ -213,7 +212,7 @@ def populate_health_flags(rows: list[dict]) -> list[dict]:
     return rows
 
 
-def populate_degf_first_pass(rows: list[dict]) -> list[dict]:
+def populate_degf_first_pass(rows):
     """
     For each DeGF record, join baseline records on (model_tag, image, prompt_stem)
     and populate degf_first_pass_* fields.
@@ -222,7 +221,7 @@ def populate_degf_first_pass(rows: list[dict]) -> list[dict]:
     on the same image with the same prompt. This is exactly the baseline record.
     """
     # Build lookup: (model_tag, image, prompt_stem) → baseline row
-    baseline_lookup: dict[tuple, dict] = {}
+    baseline_lookup = {}
     for row in rows:
         if row["method"] == "baseline":
             key = (row["model_tag"], row["image"], row["prompt_stem"])
@@ -248,17 +247,17 @@ def populate_degf_first_pass(rows: list[dict]) -> list[dict]:
     return rows
 
 
-def build_combo_summary(rows: list[dict]) -> list[dict]:
+def build_combo_summary(rows):
     """One summary row per (model_tag, method, prompt_stem)."""
     from math import sqrt
 
-    combos: dict[tuple, list] = defaultdict(list)
+    combos = defaultdict(list)
     for row in rows:
         key = (row["model_tag"], row["method"], row["prompt_stem"])
         combos[key].append(row)
 
     # Build baseline accuracy map for delta computation
-    baseline_acc: dict[tuple, float] = {}
+    baseline_acc = {}
     for (model, method, prompt), recs in combos.items():
         if method == "baseline":
             parsed = [r for r in recs if r["parse_success"] and r["gt_label"]]
@@ -364,7 +363,7 @@ def build_combo_summary(rows: list[dict]) -> list[dict]:
     return summary_rows
 
 
-def write_csv(path: Path, rows: list[dict]) -> None:
+def write_csv(path, rows):
     if not rows:
         path.write_text("")
         return
