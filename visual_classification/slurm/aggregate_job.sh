@@ -15,8 +15,8 @@ SIF="$DATA_DIR/castor.sif"
 echo "aggregate_report starting $(date) on $(hostname)"
 
 apptainer exec --containall \
+    --home $HOME \
     --env USER=$USER \
-    --env HOME=$HOME \
     --bind "$BENCHYBENCH_ROOT:$BENCHYBENCH_ROOT" \
     --bind "$DATA_DIR:$DATA_DIR" \
     "$SIF" \
