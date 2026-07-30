@@ -50,7 +50,7 @@ nvidia-smi --query-gpu=name,memory.total,driver_version --format=csv,noheader ||
 METHOD=""
 OUTPUT_ROOT=""
 PROMPTS_DIR="$VC_DIR/prompts"
-LIMIT_FLAG=""
+LIMIT=""
 PASSTHROUGH=()
 _args=("$@"); _i=0
 while [[ $_i -lt ${#_args[@]} ]]; do
@@ -61,8 +61,8 @@ while [[ $_i -lt ${#_args[@]} ]]; do
         --output-root=*) OUTPUT_ROOT="${_args[$_i]#--output-root=}" ;;
         --prompts-dir)  _i=$((_i+1)); PROMPTS_DIR="${_args[$_i]}" ;;
         --prompts-dir=*) PROMPTS_DIR="${_args[$_i]#--prompts-dir=}" ;;
-        --limit)        _i=$((_i+1)); LIMIT_FLAG="--limit ${_args[$_i]}" ;;
-        --limit=*)      LIMIT_FLAG="--limit ${_args[$_i]#--limit=}" ;;
+        --limit)        _i=$((_i+1)); LIMIT="${_args[$_i]}" ;;
+        --limit=*)      LIMIT="${_args[$_i]#--limit=}" ;;
         *)              PASSTHROUGH+=("${_args[$_i]}") ;;
     esac
     _i=$((_i+1))
@@ -142,26 +142,20 @@ $APPTAINER_BASE "$SIF" $PYTHON "$REPO/CASTOR/prepare_dataset.py" \
     --output      "$QUESTIONS_FILE" \
     --prompt-file "$PROMPT_FILE"
 
-# ── Run inference ─────────────────────────────────────────────────────────────
-# Qwen's run_inference.py accepts --method {baseline|degf|only} natively.
-# For degf, SD images are handled within the Qwen inference script.
-SD_DIR=""
-SD_EXTRA=""
-if [[ "$METHOD" == "degf" ]]; then
-    SD_DIR="$OUTPUT_ROOT/inference/sd_images"
-    mkdir -p "$SD_DIR"
-    SD_EXTRA="--sd-output-dir $SD_DIR"
+# Apply --limit by truncating the questions file (run_inference.py has no --limit flag)
+if [[ -n "$LIMIT" ]]; then
+    tmp="${QUESTIONS_FILE}.tmp"
+    head -n "$LIMIT" "$QUESTIONS_FILE" > "$tmp" && mv "$tmp" "$QUESTIONS_FILE"
+    echo "[limit] Truncated questions file to $LIMIT entries"
 fi
 
+# ── Run inference ─────────────────────────────────────────────────────────────
 time $APPTAINER_BASE "$SIF" $PYTHON "$REPO/CASTOR/run_inference.py" \
     "${PASSTHROUGH[@]}" \
     --question-file "$QUESTIONS_FILE" \
     --answers-file  "$ANSWERS_FILE" \
     --run-name      "qwen_${METHOD}_${PROMPT_STEM}" \
-    --method        "$METHOD" \
-    --benchybench-root "$BENCHYBENCH_ROOT" \
-    $SD_EXTRA \
-    $LIMIT_FLAG
+    --method        "$METHOD"
 
 # Write sidecar metadata for regex_eval.py to read prompt_stem and model/method
 cat > "$INFER_DIR/meta_qwen_${METHOD}_${SLURM_JOB_ID}.json" <<EOF
