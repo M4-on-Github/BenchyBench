@@ -11,7 +11,7 @@
 # to $OUTPUT_ROOT/logs/ and passes --method, --output-root, --prompts-dir.
 #
 # Interactive debug (smoke):
-#   srun -p pleiades --time=2:00:00 --cpus-per-task=4 --gpus-per-task=1 \
+#   srun -p pleiades --time=2:00:00 --cpus-per-task=4 --gpus=1 \
 #        --mem=40G --constraint=RTX6000ADA --pty bash
 #   cd ~/benchybench
 #   SLURM_ARRAY_TASK_ID=0 bash visual_classification/slurm/infer_llava.sh \
@@ -109,8 +109,8 @@ IMAGE_DIR="$BENCHYBENCH_ROOT/shipwreck_wiki_images/sorted_images"
 # ── Apptainer base ────────────────────────────────────────────────────────────
 APPTAINER_BASE="apptainer exec --containall --nv \
     --pwd $REPO \
+    --home $HOME \
     --env USER=$USER \
-    --env HOME=$HOME \
     --env HF_HOME=$HF_HOME \
     --env TRANSFORMERS_CACHE=$TRANSFORMERS_CACHE \
     --env TORCH_HOME=$TORCH_HOME \

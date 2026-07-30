@@ -14,7 +14,6 @@
 #   --run-name NAME     Required. Unique label for this run.
 #   --limit N           Pass --limit N to each inference job (smoke tests)
 #   --skip-judge        Skip LLM judge phase; chain aggregate directly after regex
-#   --max-concurrent N  Max active SLURM jobs before throttling [default: 4]
 #   --dry-run           Print sbatch commands without submitting
 #
 # Monitor:
@@ -24,6 +23,7 @@
 set -euo pipefail
 
 BENCHYBENCH_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+export BENCHYBENCH_ROOT   # propagated to sbatch jobs so $0 fallback is never used
 VC_DIR="$BENCHYBENCH_ROOT/visual_classification"
 SLURM_DIR="$VC_DIR/slurm"
 DATA_DIR="/data/$USER"
@@ -32,7 +32,6 @@ DATA_DIR="/data/$USER"
 RUN_NAME=""
 LIMIT=""
 SKIP_JUDGE=false
-MAX_CONCURRENT=4
 DRY_RUN=false
 
 _args=("$@"); _i=0
@@ -42,7 +41,6 @@ while [[ $_i -lt ${#_args[@]} ]]; do
         --run-name=*)     RUN_NAME="${_args[$_i]#--run-name=}" ;;
         --limit)          _i=$((_i+1)); LIMIT="${_args[$_i]}" ;;
         --limit=*)        LIMIT="${_args[$_i]#--limit=}" ;;
-        --max-concurrent) _i=$((_i+1)); MAX_CONCURRENT="${_args[$_i]}" ;;
         --skip-judge)     SKIP_JUDGE=true ;;
         --dry-run)        DRY_RUN=true ;;
         -h|--help)
@@ -92,17 +90,6 @@ _sbatch() {
     fi
 }
 
-_wait_slot() {
-    [[ "$DRY_RUN" == true ]] && return
-    while true; do
-        local n
-        n=$(squeue -u "$USER" -h | wc -l)
-        [[ "$n" -lt "$MAX_CONCURRENT" ]] && break
-        echo "  [throttle] $n active jobs >= $MAX_CONCURRENT, sleeping 60s..."
-        sleep 60
-    done
-}
-
 EXTRA_FLAGS=""
 [[ -n "$LIMIT" ]] && EXTRA_FLAGS="--limit $LIMIT"
 
@@ -111,7 +98,6 @@ echo "-- Phase 0: inference --"
 INFER_IDS=()
 for MODEL in llava qwen; do
     for METHOD in baseline degf only; do
-        _wait_slot
         JOB_ID=$(_sbatch \
             --array="0-${ARRAY_END}" \
             --output="$LOGS_DIR/infer_${MODEL}_${METHOD}_%A_%a.out" \
