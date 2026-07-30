@@ -32,6 +32,7 @@ DATA_DIR="/data/$USER"
 RUN_NAME=""
 LIMIT=""
 SKIP_JUDGE=false
+EVAL_ONLY=false
 DRY_RUN=false
 
 _args=("$@"); _i=0
@@ -42,6 +43,7 @@ while [[ $_i -lt ${#_args[@]} ]]; do
         --limit)          _i=$((_i+1)); LIMIT="${_args[$_i]}" ;;
         --limit=*)        LIMIT="${_args[$_i]#--limit=}" ;;
         --skip-judge)     SKIP_JUDGE=true ;;
+        --eval-only)      EVAL_ONLY=true ;;
         --dry-run)        DRY_RUN=true ;;
         -h|--help)
             sed -n '2,/^set -/p' "$0" | grep '^#' | sed 's/^# \{0,1\}//'
@@ -73,11 +75,13 @@ echo "Prompts      : $PROMPTS_DIR  ($N prompt(s), array 0-$ARRAY_END)"
 echo "Output root  : $OUTPUT_ROOT"
 echo "Dry run      : $DRY_RUN"
 echo "Skip judge   : $SKIP_JUDGE"
+echo "Eval only    : $EVAL_ONLY"
 [[ -n "$LIMIT" ]] && echo "Limit        : $LIMIT images"
 echo ""
 
 if [[ "$DRY_RUN" == false ]]; then
-    mkdir -p "$LOGS_DIR" "$OUTPUT_ROOT/inference"
+    mkdir -p "$LOGS_DIR"
+    [[ "$EVAL_ONLY" == false ]] && mkdir -p "$OUTPUT_ROOT/inference"
 fi
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -94,35 +98,42 @@ EXTRA_FLAGS=""
 [[ -n "$LIMIT" ]] && EXTRA_FLAGS="--limit $LIMIT"
 
 # ── Phase 0: inference (6 array jobs) ────────────────────────────────────────
-echo "-- Phase 0: inference --"
 INFER_IDS=()
-for MODEL in llava qwen; do
-    for METHOD in baseline degf only; do
-        JOB_ID=$(_sbatch \
-            --array="0-${ARRAY_END}" \
-            --output="$LOGS_DIR/infer_${MODEL}_${METHOD}_%A_%a.out" \
-            --error="$LOGS_DIR/infer_${MODEL}_${METHOD}_%A_%a.err" \
-            "$SLURM_DIR/infer_${MODEL}.sh" \
-            --method "$METHOD" \
-            --output-root "$OUTPUT_ROOT" \
-            --prompts-dir "$PROMPTS_DIR" \
-            $EXTRA_FLAGS)
-        echo "  -> ${MODEL}x${METHOD}: job $JOB_ID"
-        INFER_IDS+=("$JOB_ID")
+if [[ "$EVAL_ONLY" == true ]]; then
+    echo "-- Phase 0: inference SKIPPED (--eval-only) --"
+    DEP_INFER=""
+else
+    echo "-- Phase 0: inference --"
+    for MODEL in llava qwen; do
+        for METHOD in baseline degf only; do
+            JOB_ID=$(_sbatch \
+                --array="0-${ARRAY_END}" \
+                --output="$LOGS_DIR/infer_${MODEL}_${METHOD}_%A_%a.out" \
+                --error="$LOGS_DIR/infer_${MODEL}_${METHOD}_%A_%a.err" \
+                "$SLURM_DIR/infer_${MODEL}.sh" \
+                --method "$METHOD" \
+                --output-root "$OUTPUT_ROOT" \
+                --prompts-dir "$PROMPTS_DIR" \
+                $EXTRA_FLAGS)
+            echo "  -> ${MODEL}x${METHOD}: job $JOB_ID"
+            INFER_IDS+=("$JOB_ID")
+        done
     done
-done
 
-# Build afterok:id1:id2:... dependency string
-DEP_INFER="afterok"
-for JID in "${INFER_IDS[@]}"; do
-    DEP_INFER="${DEP_INFER}:${JID}"
-done
+    # Build afterok:id1:id2:... dependency string
+    DEP_INFER="afterok"
+    for JID in "${INFER_IDS[@]}"; do
+        DEP_INFER="${DEP_INFER}:${JID}"
+    done
+fi
 
 # ── Phase 1: health check ─────────────────────────────────────────────────────
 echo ""
 echo "-- Phase 1: health_check --"
+_health_dep_flag=""
+[[ -n "$DEP_INFER" ]] && _health_dep_flag="--dependency=$DEP_INFER"
 HEALTH_ID=$(_sbatch \
-    --dependency="$DEP_INFER" \
+    $_health_dep_flag \
     --output="$LOGS_DIR/health_%j.out" \
     --error="$LOGS_DIR/health_%j.err" \
     "$SLURM_DIR/health_job.sh" \
