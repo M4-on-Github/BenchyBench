@@ -10,7 +10,7 @@
 # to $OUTPUT_ROOT/logs/ and passes --method, --output-root, --prompts-dir.
 #
 # Interactive debug (smoke):
-#   srun -p pleiades --time=2:00:00 --cpus-per-task=4 --gres=gpu:2 \
+#   srun -p pleiades --time=2:00:00 --cpus-per-task=4 --gpus-per-task=2 \
 #        --mem=48G --constraint=RTX6000ADA --exclude=pleiades-1-3 --pty bash
 #   cd ~/benchybench
 #   SLURM_ARRAY_TASK_ID=0 bash visual_classification/slurm/infer_qwen.sh \
@@ -18,7 +18,7 @@
 #       --prompts-dir visual_classification/prompts --limit 3
 # ─────────────────────────────────────────────────────────────────────────────
 #SBATCH -p pleiades
-#SBATCH --gres=gpu:2
+#SBATCH --gpus-per-task=2
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=48G
 #SBATCH --time=12:00:00
