@@ -18,7 +18,7 @@
 #       --prompts-dir visual_classification/prompts --limit 3
 # ─────────────────────────────────────────────────────────────────────────────
 #SBATCH -p pleiades
-#SBATCH --gpus-per-task=2
+#SBATCH --gpus=2
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=48G
 #SBATCH --time=12:00:00
