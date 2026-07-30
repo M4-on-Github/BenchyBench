@@ -143,12 +143,15 @@ def per_combo_stats(records):
     combos = defaultdict(list)
     for rec in records:
         model = rec.get("model_tag") or rec.get("model_id", "unknown")
-        method = rec.get("method", "unknown")
         run_name = rec.get("run_name", "")
-        # Extract prompt stem from run_name: "llava_baseline_promptv3" → "promptv3"
+        # run_name format: "llava_baseline_promptv3" or "qwen_only_assertions"
         parts = run_name.split("_")
+        # method: prefer explicit field (Qwen records), else extract from run_name part[1]
+        method = rec.get("method") or (parts[1] if len(parts) >= 3 else "unknown")
         prompt_stem = parts[-1] if len(parts) >= 3 else run_name
         combos[(model, method, prompt_stem)].append(rec)
+
+    MIN_BIAS_N = 10  # skip bias check on smoke-size samples
 
     result = {}
     for (model, method, prompt_stem), recs in combos.items():
@@ -163,7 +166,11 @@ def per_combo_stats(records):
             if lbl:
                 label_counts[lbl] += 1
         n_parsed = n - n_fail
-        label_bias = any(c / n_parsed > 0.40 for c in label_counts.values()) if n_parsed else False
+        # Bias check only meaningful with enough samples; skip on tiny smoke runs
+        label_bias = (
+            any(c / n_parsed > 0.40 for c in label_counts.values())
+            if n_parsed >= MIN_BIAS_N else False
+        )
 
         # Self-inconsistency: per image, how many distinct labels across this combo's prompts
         # (only meaningful across multiple prompt_stems; within a combo it's all one prompt)
