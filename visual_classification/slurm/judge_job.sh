@@ -4,11 +4,22 @@
 #SBATCH --mem=8G
 #SBATCH --time=0:30:00
 #SBATCH -J vc_judge
-# --output and --error set by batch_submit.py
+# --output and --error set by submit.sh
 
 set -e
 BENCHYBENCH_ROOT="${BENCHYBENCH_ROOT:-$(cd "$(dirname "$0")/../.." && pwd)}"
 VC_DIR="$BENCHYBENCH_ROOT/visual_classification"
+DATA_DIR="/data/$USER"
+SIF="$DATA_DIR/castor.sif"
+
 echo "judge_submit starting $(date) on $(hostname)"
-python3 "$VC_DIR/judge_submit.py" "$@"
+
+apptainer exec --containall \
+    --env USER=$USER \
+    --env HOME=$HOME \
+    --bind "$BENCHYBENCH_ROOT:$BENCHYBENCH_ROOT" \
+    --bind "$DATA_DIR:$DATA_DIR" \
+    "$SIF" \
+    /opt/conda/bin/python3 "$VC_DIR/judge_submit.py" "$@"
+
 echo "judge_submit done $(date)"
