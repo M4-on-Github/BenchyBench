@@ -696,11 +696,10 @@ def run_outcome(output_root, benchybench_root, run_name):
         clip_rows = [{"key": k, "clip_similarity": v} for k, v in clip_sims.items()]
         write_csv(outcome_dir / "clip_similarities.csv", clip_rows)
 
-    # Merge CLIP back into per_record rows
+    # Merge CLIP back into per_record rows (initialise for all so fieldnames are uniform)
     for row in rows:
-        if row.get("method") == "degf":
-            key = f"{row['image']}|{row['model_tag']}|{row['method']}|{row['prompt_stem']}"
-            row["clip_similarity"] = clip_sims.get(key)
+        key = f"{row['image']}|{row['model_tag']}|{row['method']}|{row['prompt_stem']}"
+        row["clip_similarity"] = clip_sims.get(key) if row.get("method") == "degf" else None
 
     # Re-write per_record.csv with all new fields
     write_csv(per_record_path, rows)
