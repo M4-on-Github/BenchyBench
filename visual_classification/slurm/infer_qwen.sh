@@ -126,8 +126,8 @@ PROMPT_STEM=$(basename "$PROMPT_FILE" .txt)
 INFER_DIR="$OUTPUT_ROOT/inference"
 mkdir -p "$INFER_DIR"
 
-QUESTIONS_FILE="$INFER_DIR/questions_qwen_${METHOD}_${SLURM_JOB_ID}.jsonl"
-ANSWERS_FILE="$INFER_DIR/answers_qwen_${METHOD}_${SLURM_JOB_ID}.jsonl"
+QUESTIONS_FILE="$INFER_DIR/questions_qwen_${METHOD}_${PROMPT_STEM}_${SLURM_JOB_ID}.jsonl"
+ANSWERS_FILE="$INFER_DIR/answers_qwen_${METHOD}_${PROMPT_STEM}_${SLURM_JOB_ID}.jsonl"
 
 echo "=========================================="
 echo " Method      : $METHOD"
@@ -158,7 +158,7 @@ time $APPTAINER_BASE "$SIF" $PYTHON "$REPO/CASTOR/run_inference.py" \
     --method        "$METHOD"
 
 # Write sidecar metadata for regex_eval.py to read prompt_stem and model/method
-cat > "$INFER_DIR/meta_qwen_${METHOD}_${SLURM_JOB_ID}.json" <<EOF
+cat > "$INFER_DIR/meta_qwen_${METHOD}_${PROMPT_STEM}_${SLURM_JOB_ID}.json" <<EOF
 {
   "model": "qwen",
   "method": "$METHOD",
