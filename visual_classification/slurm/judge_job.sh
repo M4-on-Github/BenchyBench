@@ -9,17 +9,11 @@
 set -e
 BENCHYBENCH_ROOT="${BENCHYBENCH_ROOT:-$(cd "$(dirname "$0")/../.." && pwd)}"
 VC_DIR="$BENCHYBENCH_ROOT/visual_classification"
-DATA_DIR="/data/$USER"
-SIF="$DATA_DIR/castor.sif"
 
 echo "judge_submit starting $(date) on $(hostname)"
 
-apptainer exec --containall \
-    --home $HOME \
-    --env USER=$USER \
-    --bind "$BENCHYBENCH_ROOT:$BENCHYBENCH_ROOT" \
-    --bind "$DATA_DIR:$DATA_DIR" \
-    "$SIF" \
-    /opt/conda/bin/python3 "$VC_DIR/judge_submit.py" "$@"
+# judge_submit.py only uses stdlib (json, csv, subprocess) and calls sbatch —
+# run it on the host directly so sbatch is available (not inside apptainer).
+python3 "$VC_DIR/judge_submit.py" "$@"
 
 echo "judge_submit done $(date)"
