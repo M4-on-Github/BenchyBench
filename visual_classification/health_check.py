@@ -87,13 +87,16 @@ def load_records(output_root):
     infer_dir = output_root / "inference"
     records = []
     for path in sorted(infer_dir.glob("answers_*.jsonl")):
+        stem = path.stem
         with path.open(encoding="utf-8") as f:
             for line in f:
                 line = line.strip()
                 if not line:
                     continue
                 try:
-                    records.append(json.loads(line))
+                    rec = json.loads(line)
+                    rec["_source_stem"] = stem
+                    records.append(rec)
                 except json.JSONDecodeError:
                     pass
     return records
@@ -112,14 +115,6 @@ def load_meta(output_root):
             pass
     return meta_map
 
-
-def _combo_key(rec: dict, meta_by_stem: dict):
-    """(model, method, prompt_stem)"""
-    model = rec.get("model_tag") or rec.get("model_id", "unknown")
-    method = rec.get("method", "unknown")
-    # Try to get prompt_stem from the record itself, else from meta sidecar
-    prompt_stem = rec.get("run_name", "").rsplit("_", 1)[-1] if rec.get("run_name") else "unknown"
-    return (model, method, prompt_stem)
 
 
 def annotate_records(records):
@@ -143,12 +138,8 @@ def per_combo_stats(records):
     combos = defaultdict(list)
     for rec in records:
         model = rec.get("model_tag") or rec.get("model_id", "unknown")
-        run_name = rec.get("run_name", "")
-        # run_name format: "llava_baseline_promptv3" or "qwen_only_assertions"
-        parts = run_name.split("_")
-        # method: prefer explicit field (Qwen records), else extract from run_name part[1]
-        method = rec.get("method") or (parts[1] if len(parts) >= 3 else "unknown")
-        prompt_stem = parts[-1] if len(parts) >= 3 else run_name
+        method = rec.get("_method", "unknown")
+        prompt_stem = rec.get("_prompt_stem", "unknown")
         combos[(model, method, prompt_stem)].append(rec)
 
     MIN_BIAS_N = 10  # skip bias check on smoke-size samples
@@ -217,6 +208,17 @@ def main():
         (health_dir / "health_report.json").write_text(json.dumps(report, indent=2))
         print(msg)
         sys.exit(1)
+
+    # ── Inject method + prompt_stem from sidecar meta JSONs ───────────────────
+    # Inference records (especially LLaVA/DeGF) don't carry method/prompt_stem
+    # internally; the meta_*.json sidecars written by infer_*.sh are authoritative.
+    meta_map = load_meta(output_root)
+    for rec in records:
+        stem = rec.get("_source_stem", "")
+        meta = meta_map.get(stem, {})
+        # Qwen records carry method natively; LLaVA records rely entirely on meta
+        rec["_method"] = meta.get("method") or rec.get("method") or "unknown"
+        rec["_prompt_stem"] = meta.get("prompt_stem") or rec.get("_prompt_stem") or "unknown"
 
     print(f"Loaded {len(records)} records")
 
