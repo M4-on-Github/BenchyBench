@@ -173,8 +173,9 @@ def per_combo_stats(records):
                 per_image[img].add(lbl)
         n_inconsistent = sum(1 for lbls in per_image.values() if len(lbls) > 1)
 
-        # Skip parse_fail gate on tiny smoke samples — 1/3 = 33% is noise, not signal
-        gate_fail = (label_bias or parse_fail_rate > 0.15) if n >= MIN_BIAS_N else False
+        # label_bias is a warning only — it's a research finding, not a pipeline error.
+        # Hard gate only on parse_fail_rate (can't compute accuracy on unparseable output).
+        gate_fail = (parse_fail_rate > 0.15) if n >= MIN_BIAS_N else False
 
         result[(model, method, prompt_stem)] = {
             "n_records": n,
