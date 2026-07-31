@@ -186,7 +186,8 @@ if [[ "$SKIP_JUDGE" == true ]]; then
         "$SLURM_DIR/aggregate_job.sh" \
         --phase outcome \
         --output-root "$OUTPUT_ROOT" \
-        --benchybench-root "$BENCHYBENCH_ROOT")
+        --benchybench-root "$BENCHYBENCH_ROOT" \
+        --run-name "$RUN_NAME")
     echo "  -> aggregate outcome: job $OUTCOME_ID"
 
     echo ""

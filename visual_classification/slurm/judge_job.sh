@@ -59,7 +59,8 @@ if [[ -n "$AGG_JOB_ID" && -n "$OUTPUT_ROOT" && -n "$RUN_NAME" ]]; then
         "$SLURM_DIR/aggregate_job.sh" \
         --phase outcome \
         --output-root "$OUTPUT_ROOT" \
-        --benchybench-root "$BENCHYBENCH_ROOT")
+        --benchybench-root "$BENCHYBENCH_ROOT" \
+        --run-name "$RUN_NAME")
     echo "  -> aggregate outcome: job $OUTCOME_ID"
 
     REPORT_ID=$(sbatch \
