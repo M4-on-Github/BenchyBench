@@ -146,10 +146,11 @@ def main():
         print("[dry-run] skipping actual submission")
     else:
         result = subprocess.run(cmd, cwd=str(eval_castor_root),
-                                capture_output=False, check=True,
                                 stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                                 text=True)
         print(result.stdout)
+        if result.returncode != 0:
+            sys.exit(f"ERROR: judge_panel_submit.sh exited {result.returncode}")
         # Parse the aggregation job ID from the last "job=NNNNN" in output
         matches = _re.findall(r'\bjob=(\d+)', result.stdout)
         if matches:

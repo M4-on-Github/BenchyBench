@@ -29,9 +29,18 @@ done
 
 echo "judge_submit starting $(date) on $(hostname)"
 
-# Capture output so we can parse the agg job ID
+# Capture output so we can parse the agg job ID.
+# Use set +e so a non-zero exit doesn't kill the script before we can echo the error.
+set +e
 JUDGE_OUT=$(python3 "$VC_DIR/judge_submit.py" "$@" 2>&1)
+JUDGE_EXIT=$?
+set -e
 echo "$JUDGE_OUT"
+
+if [[ $JUDGE_EXIT -ne 0 ]]; then
+    echo "ERROR: judge_submit.py exited $JUDGE_EXIT — see output above"
+    exit $JUDGE_EXIT
+fi
 
 # Extract the aggregation job ID printed by judge_submit.py
 AGG_JOB_ID=$(echo "$JUDGE_OUT" | grep -oP 'JUDGE_AGG_JOB_ID=\K[0-9]+' || true)
