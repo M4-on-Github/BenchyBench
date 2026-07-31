@@ -91,19 +91,24 @@ def load_judge_consensus(eval_castor_root, run_name):
                     rec = json.loads(line)
                 except json.JSONDecodeError:
                     continue
-                image = rec.get("image", "")
-                model_tag = rec.get("model_tag", "")
-                method = rec.get("method", "")
+                image       = rec.get("image", "")
+                model_tag   = rec.get("model_tag", "")
+                method      = rec.get("method", "")
                 prompt_stem = rec.get("prompt_stem", "")
+                # Fallback: parse from record_id if passthrough fields are absent
+                if not model_tag and "record_id" in rec:
+                    parts = rec["record_id"].split("||")
+                    if len(parts) == 4:
+                        image, model_tag, method, prompt_stem = parts
                 key = (image, model_tag, method, prompt_stem)
+                fc = rec.get("field_consensus") or {}
                 records[key] = {
-                    "judge_verdict": rec.get("judge_verdict"),
-                    "judge_score": rec.get("mean_score"),
-                    "judge_state_correct": (
-                        rec.get("field_consensus", {}).get("state_correct")
-                        if rec.get("field_consensus")
-                        else None
-                    ),
+                    "judge_verdict":              rec.get("judge_verdict"),
+                    "judge_score":                rec.get("mean_score"),
+                    "judge_state_correct":        fc.get("state_correct"),
+                    "judge_vessel_type_correct":  fc.get("vessel_type_correct"),
+                    "judge_size_correct":         fc.get("size_correct"),
+                    "judge_cargo_correct":        fc.get("cargo_correct"),
                 }
     return records
 
@@ -785,9 +790,12 @@ def run_outcome(output_root, benchybench_root, run_name):
                 key = (row["image"], row["model_tag"], row["method"], row["prompt_stem"])
                 jdata = judge_map.get(key)
                 if jdata:
-                    row["judge_verdict"] = jdata["judge_verdict"]
-                    row["judge_score"] = jdata["judge_score"]
-                    row["judge_state_correct"] = jdata["judge_state_correct"]
+                    row["judge_verdict"]             = jdata["judge_verdict"]
+                    row["judge_score"]               = jdata["judge_score"]
+                    row["judge_state_correct"]       = jdata["judge_state_correct"]
+                    row["judge_vessel_type_correct"] = jdata["judge_vessel_type_correct"]
+                    row["judge_size_correct"]        = jdata["judge_size_correct"]
+                    row["judge_cargo_correct"]       = jdata["judge_cargo_correct"]
                     n_merged += 1
             print(f"  Merged {n_merged} judge verdicts into per_record rows")
             # Re-write per_record.csv with judge fields
