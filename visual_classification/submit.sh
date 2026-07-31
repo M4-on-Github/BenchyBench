@@ -173,32 +173,38 @@ else
     echo "-- Phase 3: judge skipped --"
 fi
 
-# ── Phase 4a: outcome analysis ────────────────────────────────────────────────
-echo ""
-echo "-- Phase 4a: aggregate --phase outcome --"
-OUTCOME_ID=$(_sbatch \
-    --dependency="afterok:${PREV_ID}" \
-    --output="$LOGS_DIR/aggregate_outcome_%j.out" \
-    --error="$LOGS_DIR/aggregate_outcome_%j.err" \
-    "$SLURM_DIR/aggregate_job.sh" \
-    --phase outcome \
-    --output-root "$OUTPUT_ROOT" \
-    --benchybench-root "$BENCHYBENCH_ROOT")
-echo "  -> aggregate outcome: job $OUTCOME_ID"
+# ── Phase 4: outcome + report ─────────────────────────────────────────────────
+# When judge runs, judge_job.sh chains outcome+report after the panel agg job.
+# When judge is skipped, we chain them here directly after regex.
+if [[ "$SKIP_JUDGE" == true ]]; then
+    echo ""
+    echo "-- Phase 4a: aggregate --phase outcome (no judge) --"
+    OUTCOME_ID=$(_sbatch \
+        --dependency="afterok:${PREV_ID}" \
+        --output="$LOGS_DIR/aggregate_outcome_%j.out" \
+        --error="$LOGS_DIR/aggregate_outcome_%j.err" \
+        "$SLURM_DIR/aggregate_job.sh" \
+        --phase outcome \
+        --output-root "$OUTPUT_ROOT" \
+        --benchybench-root "$BENCHYBENCH_ROOT")
+    echo "  -> aggregate outcome: job $OUTCOME_ID"
 
-# ── Phase 4b: HTML report ─────────────────────────────────────────────────────
-echo ""
-echo "-- Phase 4b: aggregate --phase report --"
-REPORT_ID=$(_sbatch \
-    --dependency="afterok:${OUTCOME_ID}" \
-    --output="$LOGS_DIR/aggregate_report_%j.out" \
-    --error="$LOGS_DIR/aggregate_report_%j.err" \
-    "$SLURM_DIR/aggregate_job.sh" \
-    --phase report \
-    --output-root "$OUTPUT_ROOT" \
-    --benchybench-root "$BENCHYBENCH_ROOT" \
-    --run-name "$RUN_NAME")
-echo "  -> aggregate report: job $REPORT_ID"
+    echo ""
+    echo "-- Phase 4b: aggregate --phase report --"
+    REPORT_ID=$(_sbatch \
+        --dependency="afterok:${OUTCOME_ID}" \
+        --output="$LOGS_DIR/aggregate_report_%j.out" \
+        --error="$LOGS_DIR/aggregate_report_%j.err" \
+        "$SLURM_DIR/aggregate_job.sh" \
+        --phase report \
+        --output-root "$OUTPUT_ROOT" \
+        --benchybench-root "$BENCHYBENCH_ROOT" \
+        --run-name "$RUN_NAME")
+    echo "  -> aggregate report: job $REPORT_ID"
+else
+    echo ""
+    echo "-- Phase 4: outcome+report chained inside judge_job.sh after panel agg --"
+fi
 
 # ── Summary ───────────────────────────────────────────────────────────────────
 echo ""

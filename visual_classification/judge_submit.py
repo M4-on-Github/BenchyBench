@@ -130,7 +130,8 @@ def main():
                 f.write(json.dumps(rec) + "\n")
         print(f"Wrote judge input: {judge_input}")
 
-    # ── Call judge_panel_submit.sh ────────────────────────────────────────────
+    # ── Call judge_panel_submit.sh, capture output to parse agg job ID ───────
+    import re as _re
     cmd = ["bash", str(judge_submit_script), "--run", args.run_name]
     if args.limit:
         cmd += ["--limit", str(args.limit)]
@@ -140,15 +141,25 @@ def main():
     print(f"\nCalling judge panel:")
     print("  " + " ".join(cmd))
 
+    agg_job_id = None
     if args.dry_run:
         print("[dry-run] skipping actual submission")
     else:
-        result = subprocess.run(cmd, cwd=str(eval_castor_root), check=True)
+        result = subprocess.run(cmd, cwd=str(eval_castor_root),
+                                capture_output=False, check=True,
+                                stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                text=True)
+        print(result.stdout)
+        # Parse the aggregation job ID from the last "job=NNNNN" in output
+        matches = _re.findall(r'\bjob=(\d+)', result.stdout)
+        if matches:
+            agg_job_id = matches[-1]
 
     # ── Print merge info ──────────────────────────────────────────────────────
     expected_consensus = eval_castor_root / "results" / "p5_judge" / args.run_name
     print(f"\nJudge output will appear at: {expected_consensus}/")
-    print(f"aggregate_report.py --phase outcome will merge from there.")
+    if agg_job_id:
+        print(f"JUDGE_AGG_JOB_ID={agg_job_id}")
 
 
 if __name__ == "__main__":
