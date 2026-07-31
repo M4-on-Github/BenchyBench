@@ -242,6 +242,25 @@ def compute_per_image_tiers(rows):
 
         primary_failure_type = failure_types[0] if failure_types else None
 
+        # ── Judge-based tier (parallel to regex tier, using judge_state_correct) ──
+        j_rows = [r for r in image_rows if r.get("judge_state_correct") is not None]
+        n_j = len(j_rows)
+        n_j_correct = sum(1 for r in j_rows if _bool(r.get("judge_state_correct")))
+        if n_j == 0:
+            judge_tier = None
+            judge_consensus = None
+        elif n_j_correct == n_j:
+            judge_tier = 1
+            judge_consensus = "all_correct"
+        elif n_j_correct == 0:
+            judge_tier = 2
+            judge_consensus = "all_wrong"
+        else:
+            judge_tier = 3
+            judge_consensus = "contested"
+
+        tier_disagree = (tier != judge_tier) if (tier is not None and judge_tier is not None) else None
+
         results.append({
             "image": image,
             "gt_label": gt_label,
@@ -253,6 +272,11 @@ def compute_per_image_tiers(rows):
             "sub_types": "|".join(sub_types) if sub_types else None,
             "primary_failure_type": primary_failure_type,
             "failure_types": "|".join(failure_types) if failure_types else None,
+            "judge_tier": judge_tier,
+            "judge_consensus": judge_consensus,
+            "judge_n_correct": n_j_correct,
+            "judge_n": n_j,
+            "tier_disagree": tier_disagree,
         })
 
     return results
@@ -504,6 +528,46 @@ def _confusion_html(summary_rows, per_record_rows):
     return "\n".join(html)
 
 
+def _update_summary_with_judge(rows, summary_path):
+    """Add per-combo judge accuracy columns to summary.csv."""
+    JUDGE_FIELDS = [
+        ("judge_state_correct",       "judge_state_accuracy"),
+        ("judge_vessel_type_correct", "judge_vessel_type_accuracy"),
+        ("judge_size_correct",        "judge_size_accuracy"),
+        ("judge_cargo_correct",       "judge_cargo_accuracy"),
+    ]
+
+    # Group rows by combo
+    combos = defaultdict(list)
+    for r in rows:
+        combos[(r["model_tag"], r["method"], r["prompt_stem"])].append(r)
+
+    def _kappa_combo(recs):
+        pairs = [(1 if _bool(r.get("regex_correct")) else 0,
+                  1 if _bool(r.get("judge_state_correct")) else 0)
+                 for r in recs if r.get("judge_state_correct") is not None]
+        if not pairs: return None
+        n = len(pairs)
+        p_o = sum(a == b for a, b in pairs) / n
+        p_r = sum(a for a, _ in pairs) / n
+        p_j = sum(b for _, b in pairs) / n
+        p_e = p_r * p_j + (1 - p_r) * (1 - p_j)
+        return round((p_o - p_e) / (1 - p_e), 4) if (1 - p_e) > 0 else 1.0
+
+    summary = read_csv(summary_path)
+    for row in summary:
+        key = (row["model_tag"], row["method"], row["prompt_stem"])
+        recs = combos.get(key, [])
+        j_recs = [r for r in recs if r.get("judge_state_correct") is not None]
+        row["judge_n"] = len(j_recs)
+        for src_field, col in JUDGE_FIELDS:
+            n_correct = sum(1 for r in j_recs if _bool(r.get(src_field)))
+            row[col] = round(n_correct / len(j_recs), 4) if j_recs else None
+        row["judge_state_kappa"] = _kappa_combo(recs)
+    write_csv(summary_path, summary)
+    print(f"  summary.csv updated with judge columns ({len(summary)} rows)")
+
+
 def _judge_section_html(per_record_rows):
     judge_rows = [r for r in per_record_rows if r.get("judge_verdict") is not None]
     if not judge_rows:
@@ -530,29 +594,68 @@ def _judge_section_html(per_record_rows):
         elif not j_ok and not r_ok: c["both_wrong"]  += 1
         else:                       c["disagree"]    += 1
 
-    # ── Judge accuracy table ──────────────────────────────────────────────────
-    html = ["<h3>Judge accuracy</h3>",
-            "<table class='data-table'><thead><tr><th>Model</th><th>Method</th>"]
-    for ps in prompts:
-        html.append(f"<th>{ps}</th>")
-    html.append("<th>Avg</th></tr></thead><tbody>")
+    # Per-combo tallies for all four fields
+    field_combos = defaultdict(lambda: defaultdict(lambda: {"n": 0, "correct": 0}))
+    for r in per_record_rows:
+        key = (r["model_tag"], r["method"], r["prompt_stem"])
+        for fld in ["judge_state_correct", "judge_vessel_type_correct",
+                    "judge_size_correct", "judge_cargo_correct"]:
+            if r.get(fld) is not None:
+                field_combos[fld][key]["n"] += 1
+                if _bool(r.get(fld)):
+                    field_combos[fld][key]["correct"] += 1
 
-    for model in models:
-        for method in methods:
-            cells, accs = [], []
-            for ps in prompts:
-                c = combos.get((model, method, ps))
-                if c and c["n"]:
-                    acc = c["j_correct"] / c["n"]
-                    accs.append(acc)
-                    cells.append(f"<td>{acc*100:.1f}%</td>")
-                else:
-                    cells.append("<td>—</td>")
-            avg = f"{mean(accs)*100:.1f}%" if accs else "—"
-            html.append(f"<tr><td>{model}</td><td>{method}</td>")
-            html.extend(cells)
-            html.append(f"<td><b>{avg}</b></td></tr>")
-    html.append("</tbody></table>")
+    JUDGE_FIELDS = [
+        ("judge_state_correct",       "State"),
+        ("judge_vessel_type_correct", "Vessel type"),
+        ("judge_size_correct",        "Size"),
+        ("judge_cargo_correct",       "Cargo"),
+    ]
+
+    # ── Per-field accuracy tables ─────────────────────────────────────────────
+    html = []
+    for fld, label in JUDGE_FIELDS:
+        html.append(f"<h3>Judge accuracy — {label}</h3>")
+        html.append("<table class='data-table'><thead><tr><th>Model</th><th>Method</th>")
+        for ps in prompts:
+            html.append(f"<th>{ps}</th>")
+        html.append("<th>Avg</th></tr></thead><tbody>")
+        for model in models:
+            for method in methods:
+                cells, accs = [], []
+                for ps in prompts:
+                    c = field_combos[fld].get((model, method, ps))
+                    if c and c["n"]:
+                        acc = c["correct"] / c["n"]
+                        accs.append(acc)
+                        cells.append(f"<td>{acc*100:.1f}%</td>")
+                    else:
+                        cells.append("<td>—</td>")
+                avg = f"{mean(accs)*100:.1f}%" if accs else "—"
+                html.append(f"<tr><td>{model}</td><td>{method}</td>")
+                html.extend(cells)
+                html.append(f"<td><b>{avg}</b></td></tr>")
+        html.append("</tbody></table>")
+
+    # ── Regex–Judge tier disagreement summary ────────────────────────────────
+    # Count images where regex tier ≠ judge tier (from per_record_rows proxy)
+    image_regex = defaultdict(list)
+    image_judge = defaultdict(list)
+    for r in per_record_rows:
+        if r.get("judge_state_correct") is not None:
+            image_regex[r["image"]].append(_bool(r.get("regex_correct")))
+            image_judge[r["image"]].append(_bool(r.get("judge_state_correct")))
+    disagree_count = 0
+    for img in image_regex:
+        r_tier = sum(image_regex[img]) == len(image_regex[img])  # all correct?
+        j_tier = sum(image_judge[img]) == len(image_judge[img])
+        if r_tier != j_tier:
+            disagree_count += 1
+    n_images = len(image_regex)
+    if n_images:
+        html.append(f"<p><b>Regex–Judge tier disagreement:</b> {disagree_count} / {n_images} images "
+                    f"({100*disagree_count/n_images:.1f}%) have different tier assignments. "
+                    f"See <code>per_image.csv</code> column <code>tier_disagree</code> for details.</p>")
 
     # ── Regex–Judge Cohen's κ ─────────────────────────────────────────────────
     def _kappa(c):
@@ -798,8 +901,10 @@ def run_outcome(output_root, benchybench_root, run_name):
                     row["judge_cargo_correct"]       = jdata["judge_cargo_correct"]
                     n_merged += 1
             print(f"  Merged {n_merged} judge verdicts into per_record rows")
-            # Re-write per_record.csv with judge fields
             write_csv(per_record_path, rows)
+            summary_path = eval_dir / "regex" / "summary.csv"
+            if summary_path.exists():
+                _update_summary_with_judge(rows, summary_path)
         else:
             print("  No judge results found (judge may still be running, or --skip-judge used)")
 
