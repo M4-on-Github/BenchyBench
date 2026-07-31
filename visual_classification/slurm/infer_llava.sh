@@ -135,8 +135,8 @@ SD_DIR="$INFER_DIR/sd_images/llava_degf_${PROMPT_STEM}"
 mkdir -p "$INFER_DIR"
 [[ "$METHOD" == "degf" ]] && mkdir -p "$SD_DIR"
 
-QUESTIONS_FILE="$INFER_DIR/questions_llava_${METHOD}_${PROMPT_STEM}_${SLURM_JOB_ID}.jsonl"
-ANSWERS_FILE="$INFER_DIR/answers_llava_${METHOD}_${PROMPT_STEM}_${SLURM_JOB_ID}.jsonl"
+QUESTIONS_FILE="$INFER_DIR/questions_llava_${METHOD}_${PROMPT_STEM}.jsonl"
+ANSWERS_FILE="$INFER_DIR/answers_llava_${METHOD}_${PROMPT_STEM}.jsonl"
 
 echo "=========================================="
 echo " Method      : $METHOD  ($MODE_FLAG)"
@@ -160,7 +160,7 @@ if [[ -n "$LIMIT" ]]; then
 fi
 
 # ── Run inference ─────────────────────────────────────────────────────────────
-FIRSTPASS_FILE="$INFER_DIR/firstpass_llava_${METHOD}_${PROMPT_STEM}_${SLURM_JOB_ID}.jsonl"
+FIRSTPASS_FILE="$INFER_DIR/firstpass_llava_${METHOD}_${PROMPT_STEM}.jsonl"
 
 DEGF_FLAGS=""
 if [[ "$METHOD" == "degf" ]]; then
@@ -175,7 +175,7 @@ time $APPTAINER_BASE "$SIF" $PYTHON "$REPO/CASTOR/run_inference.py" \
     $MODE_FLAG $DEGF_FLAGS
 
 # Write sidecar metadata for regex_eval.py to read prompt_stem and model/method
-cat > "$INFER_DIR/meta_llava_${METHOD}_${PROMPT_STEM}_${SLURM_JOB_ID}.json" <<EOF
+cat > "$INFER_DIR/meta_llava_${METHOD}_${PROMPT_STEM}.json" <<EOF
 {
   "model": "llava",
   "method": "$METHOD",

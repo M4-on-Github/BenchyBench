@@ -53,10 +53,10 @@ All outputs under `/data/$USER/BenchyBench_results/visual_classification/{run_na
 
 ```
 ├── inference/
-│   ├── answers_{model}_{method}_{prompt_stem}_{jobid}.jsonl    ← one per (model × method × prompt)
-│   ├── questions_{model}_{method}_{prompt_stem}_{jobid}.jsonl  ← dataset passed to that job
-│   ├── meta_{model}_{method}_{prompt_stem}_{jobid}.json        ← sidecar: method/prompt_stem/paths
-│   ├── firstpass_{model}_degf_{prompt_stem}_{jobid}.jsonl      ← DeGF only: pre-SD baseline answers
+│   ├── answers_{model}_{method}_{prompt_stem}.jsonl            ← one per (model × method × prompt)
+│   ├── questions_{model}_{method}_{prompt_stem}.jsonl          ← dataset passed to that job
+│   ├── meta_{model}_{method}_{prompt_stem}.json                ← sidecar: method/prompt_stem/job_id/paths
+│   ├── firstpass_{model}_degf_{prompt_stem}.jsonl              ← DeGF only: pre-SD baseline answers
 │   └── sd_images/                                              ← DeGF only
 │       └── {model}_degf_{prompt_stem}/                         ← one subfolder per degf run
 │           └── {category}_{image_stem}.png
@@ -132,7 +132,7 @@ Each array task (= one prompt):
 2. `run_inference.py` (DeGF or ONLY repo) loads LLaVA-1.5-7B in 4-bit
 3. Per image: forward pass → decode → record `raw_text`, `inference_time_s`,
    `output_length_chars`
-4. Writes `answers_llava_{method}_{jobid}.jsonl`
+4. Writes `answers_llava_{method}_{prompt_stem}.jsonl`
 
 **LLaVA × DeGF** (1 GPU, 40G):
 
