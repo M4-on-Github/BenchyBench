@@ -23,6 +23,7 @@ Usage:
 import argparse
 import csv
 import json
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -112,6 +113,12 @@ def main():
 
     judge_records = build_judge_records(rows)
     print(f"Judge records   : {len(judge_records)} (unique image×model×method×prompt)")
+
+    # ── Clear stale judge output so re-runs start clean ──────────────────────
+    judge_out_dir = eval_castor_root / "results" / "p5_judge" / args.run_name
+    if not args.dry_run and judge_out_dir.exists():
+        shutil.rmtree(judge_out_dir)
+        print(f"Cleared stale judge output: {judge_out_dir}")
 
     # ── Write judge input ─────────────────────────────────────────────────────
     if args.dry_run:
