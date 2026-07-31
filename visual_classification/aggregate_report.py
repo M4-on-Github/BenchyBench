@@ -341,16 +341,19 @@ def compute_clip_similarities(rows, benchybench_root, output_root=None):
             img_field = row["image"]
             orig_path = image_dir / img_field
 
-            # Resolve SD image path
+            # Resolve SD image path — per-run subfolder: sd_images/{model}_degf_{prompt_stem}/
             sd_path = None
             stored = row.get("degf_sd_image_path")
             if stored:
                 sd_path = Path(stored)
-            elif sd_images_dir and img_field not in seen_sd:
-                img_flat = os.path.splitext(img_field.replace("/", "_").replace("\\", "_"))[0]
-                candidate = sd_images_dir / (img_flat + ".png")
-                seen_sd[img_field] = candidate if candidate.exists() else None
-            sd_path = sd_path or seen_sd.get(img_field)
+            elif sd_images_dir:
+                cache_key = (img_field, row.get("model_tag", ""), row.get("prompt_stem", ""))
+                if cache_key not in seen_sd:
+                    img_flat = os.path.splitext(img_field.replace("/", "_").replace("\\", "_"))[0]
+                    subfolder = f"{row.get('model_tag', 'unknown')}_degf_{row.get('prompt_stem', 'unknown')}"
+                    candidate = sd_images_dir / subfolder / (img_flat + ".png")
+                    seen_sd[cache_key] = candidate if candidate.exists() else None
+                sd_path = seen_sd.get(cache_key)
 
             if sd_path is None or not orig_path.exists() or not sd_path.exists():
                 continue

@@ -124,8 +124,9 @@ PROMPT_STEM=$(basename "$PROMPT_FILE" .txt)
 
 # ── Output paths ──────────────────────────────────────────────────────────────
 INFER_DIR="$OUTPUT_ROOT/inference"
-SD_DIR="$INFER_DIR/sd_images"
-mkdir -p "$INFER_DIR" "$SD_DIR"
+SD_DIR="$INFER_DIR/sd_images/qwen_degf_${PROMPT_STEM}"
+mkdir -p "$INFER_DIR"
+[[ "$METHOD" == "degf" ]] && mkdir -p "$SD_DIR"
 
 QUESTIONS_FILE="$INFER_DIR/questions_qwen_${METHOD}_${PROMPT_STEM}_${SLURM_JOB_ID}.jsonl"
 ANSWERS_FILE="$INFER_DIR/answers_qwen_${METHOD}_${PROMPT_STEM}_${SLURM_JOB_ID}.jsonl"

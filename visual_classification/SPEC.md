@@ -58,7 +58,8 @@ All outputs under `/data/$USER/BenchyBench_results/visual_classification/{run_na
 │   ├── meta_{model}_{method}_{prompt_stem}_{jobid}.json        ← sidecar: method/prompt_stem/paths
 │   ├── firstpass_{model}_degf_{prompt_stem}_{jobid}.jsonl      ← DeGF only: pre-SD baseline answers
 │   └── sd_images/                                              ← DeGF only
-│       └── {category}_{image_stem}.png                         ← one per unique image (prompt-independent)
+│       └── {model}_degf_{prompt_stem}/                         ← one subfolder per degf run
+│           └── {category}_{image_stem}.png
 │
 ├── health/
 │   └── health_report.json       ← per-combo flags + go/no-go verdict
