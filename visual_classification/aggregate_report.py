@@ -499,6 +499,120 @@ def _confusion_html(summary_rows, per_record_rows):
     return "\n".join(html)
 
 
+def _judge_section_html(per_record_rows):
+    judge_rows = [r for r in per_record_rows if r.get("judge_verdict") is not None]
+    if not judge_rows:
+        return "<p>No judge data available for this run.</p>"
+
+    prompts = sorted({r["prompt_stem"] for r in per_record_rows})
+    models  = sorted({r["model_tag"]   for r in per_record_rows})
+    methods = ["baseline", "degf", "only"]
+
+    # Per-combo tallies
+    combos = defaultdict(lambda: {"n": 0, "j_correct": 0, "r_correct": 0,
+                                  "both_correct": 0, "both_wrong": 0, "disagree": 0})
+    for r in per_record_rows:
+        if r.get("judge_state_correct") is None:
+            continue
+        key = (r["model_tag"], r["method"], r["prompt_stem"])
+        c = combos[key]
+        c["n"] += 1
+        j_ok = _bool(r.get("judge_state_correct"))
+        r_ok = _bool(r.get("regex_correct"))
+        if j_ok: c["j_correct"] += 1
+        if r_ok: c["r_correct"] += 1
+        if j_ok and r_ok:      c["both_correct"] += 1
+        elif not j_ok and not r_ok: c["both_wrong"]  += 1
+        else:                       c["disagree"]    += 1
+
+    # ── Judge accuracy table ──────────────────────────────────────────────────
+    html = ["<h3>Judge accuracy</h3>",
+            "<table class='data-table'><thead><tr><th>Model</th><th>Method</th>"]
+    for ps in prompts:
+        html.append(f"<th>{ps}</th>")
+    html.append("<th>Avg</th></tr></thead><tbody>")
+
+    for model in models:
+        for method in methods:
+            cells, accs = [], []
+            for ps in prompts:
+                c = combos.get((model, method, ps))
+                if c and c["n"]:
+                    acc = c["j_correct"] / c["n"]
+                    accs.append(acc)
+                    cells.append(f"<td>{acc*100:.1f}%</td>")
+                else:
+                    cells.append("<td>—</td>")
+            avg = f"{mean(accs)*100:.1f}%" if accs else "—"
+            html.append(f"<tr><td>{model}</td><td>{method}</td>")
+            html.extend(cells)
+            html.append(f"<td><b>{avg}</b></td></tr>")
+    html.append("</tbody></table>")
+
+    # ── Regex–Judge Cohen's κ ─────────────────────────────────────────────────
+    def _kappa(c):
+        n = c["n"]
+        if n == 0: return None
+        p_o = (c["both_correct"] + c["both_wrong"]) / n
+        p_r  = c["r_correct"] / n
+        p_j  = c["j_correct"] / n
+        p_e  = p_r * p_j + (1 - p_r) * (1 - p_j)
+        return (p_o - p_e) / (1 - p_e) if (1 - p_e) > 0 else 1.0
+
+    def _kappa_color(k):
+        if k is None: return ""
+        return "green" if k >= 0.8 else ("darkorange" if k >= 0.6 else "red")
+
+    html.append("<h3>Regex–Judge agreement (Cohen's κ)</h3>")
+    html.append("<table class='data-table'><thead><tr>"
+                "<th>Model</th><th>Method</th><th>Prompt</th>"
+                "<th>N</th><th>κ</th><th>Agree</th><th>Disagree</th>"
+                "</tr></thead><tbody>")
+
+    all_r, all_j = [], []
+    for model in models:
+        for method in methods:
+            for ps in prompts:
+                c = combos.get((model, method, ps))
+                if not c or not c["n"]: continue
+                k = _kappa(c)
+                agree    = c["both_correct"] + c["both_wrong"]
+                disagree = c["disagree"]
+                col = _kappa_color(k)
+                html.append(
+                    f"<tr><td>{model}</td><td>{method}</td><td>{ps}</td>"
+                    f"<td>{c['n']}</td>"
+                    f"<td style='color:{col}'>{k:.3f}</td>"
+                    f"<td>{agree} ({100*agree/c['n']:.0f}%)</td>"
+                    f"<td>{disagree}</td></tr>"
+                )
+
+    # Collect for overall κ
+    for r in per_record_rows:
+        if r.get("judge_state_correct") is None: continue
+        all_r.append(1 if _bool(r.get("regex_correct"))        else 0)
+        all_j.append(1 if _bool(r.get("judge_state_correct"))  else 0)
+
+    if all_r:
+        n = len(all_r)
+        agree = sum(a == b for a, b in zip(all_r, all_j))
+        p_o = agree / n
+        p_r = sum(all_r) / n; p_j = sum(all_j) / n
+        p_e = p_r * p_j + (1 - p_r) * (1 - p_j)
+        k_overall = (p_o - p_e) / (1 - p_e) if (1 - p_e) > 0 else 1.0
+        col = _kappa_color(k_overall)
+        html.append(
+            f"<tr style='font-weight:bold'><td colspan='3'>Overall</td>"
+            f"<td>{n}</td>"
+            f"<td style='color:{col}'>{k_overall:.3f}</td>"
+            f"<td>{agree} ({100*agree/n:.0f}%)</td>"
+            f"<td>{n - agree}</td></tr>"
+        )
+
+    html.append("</tbody></table>")
+    return "\n".join(html)
+
+
 def _degf_firstpass_html(per_record_rows):
     degf = [r for r in per_record_rows if r.get("method") == "degf"
             and r.get("degf_first_pass_label")]
@@ -553,13 +667,14 @@ def _render_html_report(output_root, run_name, benchybench_root):
 <p><b>Unique images:</b> {len({r['image'] for r in per_record_rows})}</p>
 <p><b>Combos:</b> {len(set((r['model_tag'],r['method'],r['prompt_stem']) for r in per_record_rows))}</p>
 """,
-        "S2: Main accuracy table": _acc_table_html(summary_rows),
-        "S3: Outcome tiers": _tier_summary_html(per_image_rows),
-        "S4: Confusion matrices": _confusion_html(summary_rows, per_record_rows),
-        "S5: DeGF first-pass analysis": _degf_firstpass_html(per_record_rows),
-        "S6: Tier-2 universal failure gallery": tier2_gallery or "<p>No Tier-2 images.</p>",
-        "S7: Prompt stability (Kendall's tau)": _prompt_stab_html(prompt_stab_rows),
-        "S8: Per-class breakdown": _per_class_html(per_record_rows),
+        "S2: Main accuracy table (regex)": _acc_table_html(summary_rows),
+        "S3: Judge accuracy & agreement": _judge_section_html(per_record_rows),
+        "S4: Outcome tiers": _tier_summary_html(per_image_rows),
+        "S5: Confusion matrices": _confusion_html(summary_rows, per_record_rows),
+        "S6: DeGF first-pass analysis": _degf_firstpass_html(per_record_rows),
+        "S7: Tier-2 universal failure gallery": tier2_gallery or "<p>No Tier-2 images.</p>",
+        "S8: Prompt stability (Kendall's tau)": _prompt_stab_html(prompt_stab_rows),
+        "S9: Per-class breakdown": _per_class_html(per_record_rows),
     }
 
     # Assemble HTML
