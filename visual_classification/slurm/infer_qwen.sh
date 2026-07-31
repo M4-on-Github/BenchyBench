@@ -124,10 +124,12 @@ PROMPT_STEM=$(basename "$PROMPT_FILE" .txt)
 
 # ── Output paths ──────────────────────────────────────────────────────────────
 INFER_DIR="$OUTPUT_ROOT/inference"
-mkdir -p "$INFER_DIR"
+SD_DIR="$INFER_DIR/sd_images"
+mkdir -p "$INFER_DIR" "$SD_DIR"
 
 QUESTIONS_FILE="$INFER_DIR/questions_qwen_${METHOD}_${PROMPT_STEM}_${SLURM_JOB_ID}.jsonl"
 ANSWERS_FILE="$INFER_DIR/answers_qwen_${METHOD}_${PROMPT_STEM}_${SLURM_JOB_ID}.jsonl"
+FIRSTPASS_FILE="$INFER_DIR/firstpass_qwen_${METHOD}_${PROMPT_STEM}_${SLURM_JOB_ID}.jsonl"
 
 echo "=========================================="
 echo " Method      : $METHOD"
@@ -150,12 +152,18 @@ if [[ -n "$LIMIT" ]]; then
 fi
 
 # ── Run inference ─────────────────────────────────────────────────────────────
+DEGF_FLAGS=""
+if [[ "$METHOD" == "degf" ]]; then
+    DEGF_FLAGS="--sd-dir $SD_DIR --firstpass-file $FIRSTPASS_FILE"
+fi
+
 time $APPTAINER_BASE "$SIF" $PYTHON "$REPO/CASTOR/run_inference.py" \
     "${PASSTHROUGH[@]}" \
     --question-file "$QUESTIONS_FILE" \
     --answers-file  "$ANSWERS_FILE" \
     --run-name      "qwen_${METHOD}_${PROMPT_STEM}" \
-    --method        "$METHOD"
+    --method        "$METHOD" \
+    $DEGF_FLAGS
 
 # Write sidecar metadata for regex_eval.py to read prompt_stem and model/method
 cat > "$INFER_DIR/meta_qwen_${METHOD}_${PROMPT_STEM}_${SLURM_JOB_ID}.json" <<EOF

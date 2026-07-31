@@ -305,13 +305,16 @@ def compute_prompt_stability(rows):
     return results
 
 
-def compute_clip_similarities(rows, benchybench_root):
+def compute_clip_similarities(rows, benchybench_root, output_root=None):
     """
     Compute CLIP cosine similarity between original shipwreck image and DeGF SD image.
-    Only runs for DeGF rows that have a valid degf_sd_image_path.
+    SD image path is looked up in two ways (in order):
+      1. degf_sd_image_path field in the record (explicit stored path).
+      2. output_root/inference/sd_images/{image_flat}.png reconstructed from image name.
     Returns {image_key: similarity_score}.
     """
-    degf_rows = [r for r in rows if r.get("method") == "degf" and r.get("degf_sd_image_path")]
+    sd_images_dir = (output_root / "inference" / "sd_images") if output_root else None
+    degf_rows = [r for r in rows if r.get("method") == "degf"]
     if not degf_rows:
         return {}
 
@@ -331,12 +334,25 @@ def compute_clip_similarities(rows, benchybench_root):
 
     image_dir = benchybench_root / "shipwreck_wiki_images" / "sorted_images"
     results = {}
+    seen_sd = {}  # image → sd_path (SD is prompt-independent; cache per image)
 
     with torch.no_grad():
         for row in degf_rows:
-            orig_path = image_dir / row["image"]
-            sd_path = Path(row["degf_sd_image_path"])
-            if not orig_path.exists() or not sd_path.exists():
+            img_field = row["image"]
+            orig_path = image_dir / img_field
+
+            # Resolve SD image path
+            sd_path = None
+            stored = row.get("degf_sd_image_path")
+            if stored:
+                sd_path = Path(stored)
+            elif sd_images_dir and img_field not in seen_sd:
+                img_flat = os.path.splitext(img_field.replace("/", "_").replace("\\", "_"))[0]
+                candidate = sd_images_dir / (img_flat + ".png")
+                seen_sd[img_field] = candidate if candidate.exists() else None
+            sd_path = sd_path or seen_sd.get(img_field)
+
+            if sd_path is None or not orig_path.exists() or not sd_path.exists():
                 continue
             try:
                 orig_img = Image.open(orig_path).convert("RGB")
@@ -345,10 +361,10 @@ def compute_clip_similarities(rows, benchybench_root):
                 features = model.get_image_features(**inputs)
                 features = features / features.norm(dim=-1, keepdim=True)
                 sim = float(torch.dot(features[0], features[1]).item())
-                key = f"{row['image']}|{row['model_tag']}|{row['method']}|{row['prompt_stem']}"
+                key = f"{img_field}|{row['model_tag']}|{row['method']}|{row['prompt_stem']}"
                 results[key] = round(sim, 4)
             except Exception as e:
-                print(f"  [CLIP] skipping {row['image']}: {e}")
+                print(f"  [CLIP] skipping {img_field}: {e}")
 
     print(f"  [CLIP] computed {len(results)} similarities")
     return results
@@ -691,7 +707,7 @@ def run_outcome(output_root, benchybench_root, run_name):
 
     # ── CLIP plausibility (DeGF only, if available) ───────────────────────────
     print("Computing CLIP similarities (DeGF SD images) …")
-    clip_sims = compute_clip_similarities(rows, benchybench_root)
+    clip_sims = compute_clip_similarities(rows, benchybench_root, output_root)
     if clip_sims:
         clip_rows = [{"key": k, "clip_similarity": v} for k, v in clip_sims.items()]
         write_csv(outcome_dir / "clip_similarities.csv", clip_rows)

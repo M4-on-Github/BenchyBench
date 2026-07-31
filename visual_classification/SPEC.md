@@ -49,14 +49,16 @@ visual_classification/
 
 ## 3. Output structure (cluster)
 
-All outputs under `/data/$USER/BenchyBench_results/visual_classification_{run_name}/`
+All outputs under `/data/$USER/BenchyBench_results/visual_classification/{run_name}/`
 
 ```
 ├── inference/
-│   ├── answers_{model}_{method}_{jobid}.jsonl     ← one per (model × method × prompt)
-│   ├── questions_{model}_{method}_{jobid}.jsonl   ← dataset passed to that job
-│   └── sd_images/                                 ← DeGF only
-│       └── {jobid}_{image_id}.png
+│   ├── answers_{model}_{method}_{prompt_stem}_{jobid}.jsonl    ← one per (model × method × prompt)
+│   ├── questions_{model}_{method}_{prompt_stem}_{jobid}.jsonl  ← dataset passed to that job
+│   ├── meta_{model}_{method}_{prompt_stem}_{jobid}.json        ← sidecar: method/prompt_stem/paths
+│   ├── firstpass_{model}_degf_{prompt_stem}_{jobid}.jsonl      ← DeGF only: pre-SD baseline answers
+│   └── sd_images/                                              ← DeGF only
+│       └── {category}_{image_stem}.png                         ← one per unique image (prompt-independent)
 │
 ├── health/
 │   └── health_report.json       ← per-combo flags + go/no-go verdict

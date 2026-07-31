@@ -160,12 +160,19 @@ if [[ -n "$LIMIT" ]]; then
 fi
 
 # ── Run inference ─────────────────────────────────────────────────────────────
+FIRSTPASS_FILE="$INFER_DIR/firstpass_llava_${METHOD}_${PROMPT_STEM}_${SLURM_JOB_ID}.jsonl"
+
+DEGF_FLAGS=""
+if [[ "$METHOD" == "degf" ]]; then
+    DEGF_FLAGS="--sd-dir $SD_DIR --firstpass-file $FIRSTPASS_FILE"
+fi
+
 time $APPTAINER_BASE "$SIF" $PYTHON "$REPO/CASTOR/run_inference.py" \
     "${PASSTHROUGH[@]}" \
     --question-file "$QUESTIONS_FILE" \
     --answers-file  "$ANSWERS_FILE" \
     --run-name      "llava_${METHOD}_${PROMPT_STEM}" \
-    $MODE_FLAG
+    $MODE_FLAG $DEGF_FLAGS
 
 # Write sidecar metadata for regex_eval.py to read prompt_stem and model/method
 cat > "$INFER_DIR/meta_llava_${METHOD}_${PROMPT_STEM}_${SLURM_JOB_ID}.json" <<EOF
