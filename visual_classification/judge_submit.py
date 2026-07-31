@@ -147,7 +147,7 @@ def main():
     else:
         result = subprocess.run(cmd, cwd=str(eval_castor_root),
                                 stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                                text=True)
+                                universal_newlines=True)
         print(result.stdout)
         if result.returncode != 0:
             sys.exit(f"ERROR: judge_panel_submit.sh exited {result.returncode}")
