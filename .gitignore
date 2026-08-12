@@ -1,7 +1,9 @@
 # Temporary local working dirs (not part of the project)
+temp/
 temp_*/
 tempp/
 temppp/
+temp_idk/
 sd_test/
 test_*/
 sythentic_calibration_test/
@@ -19,6 +21,7 @@ salvage_protocol_reference.md
 
 # Inference results (live in /data/$USER/ on cluster)
 results/
+plan_results/
 *.jsonl
 *.csv
 
