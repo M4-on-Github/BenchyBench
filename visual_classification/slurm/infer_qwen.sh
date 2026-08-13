@@ -12,7 +12,7 @@
 # Interactive debug (smoke):
 #   srun -p pleiades --time=2:00:00 --cpus-per-task=4 --gpus-per-task=2 \
 #        --mem=48G --constraint=RTX6000ADA --exclude=pleiades-1-3 --pty bash
-#   cd ~/benchybench
+#   cd ~/BenchyBench
 #   SLURM_ARRAY_TASK_ID=0 bash visual_classification/slurm/infer_qwen.sh \
 #       --method baseline --output-root /data/$USER/BenchyBench_results/visual_classification/smoke \
 #       --prompts-dir visual_classification/prompts --limit 3

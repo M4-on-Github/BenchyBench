@@ -70,7 +70,7 @@ Apptainer image (`castor_judge.sif`, vLLM 0.8.5) built from
 
 | # | Measures | Status | Entry point | Backend |
 |---|---|---|---|---|
-| P1 | Regex extraction accuracy | ⭐ | `pipelines/eval_castor.py` | none |
+| P1 | Regex extraction accuracy | ✓ | `pipelines/eval_castor.py` | none |
 | P2 | LLM-extracted field accuracy | ✓ | `pipelines/extract_gemma.py` → `eval_castor.py --pre-parsed` | Ollama |
 | P3 | Semantic judge (binary) | ✓ | `pipelines/judge_castor.py` | Ollama |
 | P4 | Separated-field format accuracy | ✓ | `pipelines/eval_separated.py` | none |
@@ -78,9 +78,9 @@ Apptainer image (`castor_judge.sif`, vLLM 0.8.5) built from
 | P6 | Salvage plan templating analysis | ✓ | `containers/submit_salvage.sh` | vLLM + embeddings |
 | P7 | Assertion coverage | ✓ | `containers/submit_assertion_coverage.sh` | vLLM |
 | P8 | Plan coherence (step sequencing) | ✓ | `containers/submit_coherence.sh` | vLLM |
-| P8+ | Plan coherence, improved | ⭐ | `pipelines/plan_coherence/improved/run_all.sh` | vLLM |
+| P8+ | Plan coherence, improved assertions | ⭐ | `pipelines/plan_coherence/improved/run_all.sh` | vLLM |
 
-**P1** is the fast no-backend sanity check — start here.
+**P1** is the fast no-backend sanity check - start here.
 **P5** is the judge panel `visual_classification/` calls.
 **P8+** supersedes P8: self-contained under `plan_coherence/improved/` with its
 own `config.yaml`, prompts, assertions, and a one-shot `run_all.sh`. Has its own

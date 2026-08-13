@@ -13,7 +13,7 @@
 # Interactive debug (smoke):
 #   srun -p pleiades --time=2:00:00 --cpus-per-task=4 --gpus=1 \
 #        --mem=40G --constraint=RTX6000ADA --pty bash
-#   cd ~/benchybench
+#   cd ~/BenchyBench
 #   SLURM_ARRAY_TASK_ID=0 bash visual_classification/slurm/infer_llava.sh \
 #       --method baseline --output-root /data/$USER/BenchyBench_results/visual_classification/smoke \
 #       --prompts-dir visual_classification/prompts --limit 3

@@ -1,4 +1,4 @@
-# benchybench
+# BenchyBench
 
 ONR maritime disaster VLM research — hallucination mitigation methods applied
 to the CASTOR shipwreck classification and salvage planning task.
@@ -27,8 +27,8 @@ AART Lab `pleiades` SLURM cluster.
 ## Clone Everything
 
 ```bash
-git clone --recurse-submodules https://github.com/M4-on-Github/benchybench.git
-cd benchybench
+git clone --recurse-submodules https://github.com/M4-on-Github/BenchyBench.git
+cd BenchyBench
 ```
 
 This gives you all four repos at the commits this master repo currently pins.
@@ -52,16 +52,16 @@ git push
 ## If You Already Have the Repos Cloned
 
 ```bash
-git clone https://github.com/M4-on-Github/benchybench.git
-cd benchybench
+git clone https://github.com/M4-on-Github/BenchyBench.git
+cd BenchyBench
 git submodule update --init --recursive
 ```
 
 Or point the submodules at your existing local clones:
 
 ```bash
-git clone https://github.com/M4-on-Github/benchybench.git
-cd benchybench
+git clone https://github.com/M4-on-Github/BenchyBench.git
+cd BenchyBench
 git config submodule.DeGF.url /path/to/your/DeGF
 git config submodule.ONLY.url /path/to/your/ONLY
 git config submodule.Eval_CASTOR.url /path/to/your/Eval_CASTOR

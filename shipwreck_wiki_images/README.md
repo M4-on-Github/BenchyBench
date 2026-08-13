@@ -13,6 +13,6 @@ sorted_images/
 Images are tracked in git. After cloning BenchyBench with `--recurse-submodules`
 the images are available immediately at `shipwreck_wiki_images/sorted_images/`.
 
-All inference scripts resolve images relative to the benchybench root, so
+All inference scripts resolve images relative to the BenchyBench root, so
 on the cluster the expected path is:
-`~/benchybench/shipwreck_wiki_images/sorted_images/`
+`~/BenchyBench/shipwreck_wiki_images/sorted_images/`
