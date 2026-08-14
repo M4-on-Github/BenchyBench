@@ -123,8 +123,11 @@ class TestKeyModulesDocumentTheirContract(unittest.TestCase):
          "warns the file is duplicated across repos"),
         ("DeGF/degf_utils/vcd_add_noise.py", "paper-method",
          "flags that it feeds a published method"),
-        ("DeGF/degf_utils/image_similarity.py", "IMPORT",
-         "warns CLIP loads at import time"),
+        # This previously had to WARN that CLIP loaded at import. The class
+        # refactor made loading lazy, so the contract is now the opposite:
+        # the docstring must state that weights load on first use.
+        ("DeGF/degf_utils/image_similarity.py", "LAZY LOADING",
+         "documents that CLIP loads on first use, not at import"),
     ]
 
     def test_contracts_are_stated(self):
