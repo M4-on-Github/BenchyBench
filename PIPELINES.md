@@ -246,3 +246,38 @@ Tracked here so they aren't rediscovered later.
 Resolved: ONLY's CASTOR port is now documented; P8+ is indexed in
 `Eval_CASTOR/README.md`; the pre-BenchyBench path assumptions were swept across
 all four submodules. See `PATH_SWEEP_FINDINGS.md` for the audit.
+
+---
+
+## Pushing
+
+**Submodules must be pushed before the parent.** The parent records a specific
+commit per submodule, so if the parent is pushed first, anyone cloning gets
+pointers to commits that do not exist on the submodule remotes:
+
+```
+fatal: remote error: upload-pack: not our ref <sha>
+fatal: Fetched in submodule path 'DeGF', but it did not contain <sha>
+```
+
+The clone does not fail cleanly — it falls back to whatever the submodule's
+default branch happens to be, so the tree looks populated while containing the
+wrong code.
+
+Correct order:
+
+```bash
+for d in DeGF ONLY QWEN-Maritime Eval_CASTOR; do
+    git -C "$d" push
+done
+git push          # parent last
+```
+
+Verify before pushing the parent — every pointer must appear on a remote:
+
+```bash
+for d in DeGF ONLY QWEN-Maritime Eval_CASTOR; do
+    ptr=$(git ls-tree HEAD "$d" | awk '{print $3}')
+    echo "$d $(git -C "$d" branch -r --contains "$ptr" | head -1)"
+done
+```
