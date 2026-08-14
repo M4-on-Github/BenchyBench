@@ -146,7 +146,7 @@ evidence. To run a repo outside BenchyBench, set `BENCHYBENCH_ROOT` or pass
 bash tests/run_all.sh
 ```
 
-196 assertions across nine suites. All run locally — no cluster, no GPU, no
+202 assertions across ten suites, and 100% module docstring coverage (67/67 first-party files). All run locally — no cluster, no GPU, no
 model weights, no network.
 
 | Suite | Covers |
@@ -160,6 +160,7 @@ model weights, no network.
 | `test_shared_metrics.py` | `normalize_state`, JSON extraction — the eval foundation |
 | `test_run_config.py` | CLI-over-config precedence across all three repos |
 | `test_diffusion_noise.py` | `add_diffusion_noise` — paper-method tensor math |
+| `test_documentation.py` | Every first-party module has a docstring; paper-method files carry their caution |
 
 The 3.6 guard exists because `judge_submit.py` is the one script that runs on
 the node's bare `python3` rather than inside `castor.sif` (Python 3.10). A
