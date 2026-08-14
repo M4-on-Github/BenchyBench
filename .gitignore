@@ -40,3 +40,8 @@ BenchyBench/
 # OS
 .DS_Store
 Thumbs.db
+
+# Python bytecode (created by running tests locally)
+__pycache__/
+*.py[cod]
+.pytest_cache/
