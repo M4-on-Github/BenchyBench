@@ -43,6 +43,7 @@ run "reference selector (py)"    $PYTHON tests/test_reference_selector.py
 run "judge consensus (python)"   $PYTHON tests/test_judge_consensus.py
 run "run discovery (python)"     $PYTHON tests/test_run_discovery.py
 run "separated discovery (py)"   $PYTHON tests/test_separated_discovery.py
+run "step parser (python)"       $PYTHON tests/test_parse_steps.py
 
 printf "\n════════════════════════════════════\n"
 if [[ "$FAILED" -eq 0 ]]; then
