@@ -132,18 +132,90 @@ def load_judge_consensus(eval_castor_root, run_name):
     return records
 
 
+class OutcomeTier:
+    """How the combinations agreed on one image.
+
+    The tiers partition images by consensus, and each answers a different
+    question:
+
+      Tier 1  every combination correct   the task's floor; no signal here
+      Tier 2  every combination wrong     often a ground-truth problem rather
+                                          than a model one — when nothing gets
+                                          an image right, suspect the label
+      Tier 3  combinations disagree       where method comparison actually lives
+
+    Tier 3 is the point of the analysis. A run-level accuracy delta says one
+    method beat another; the tier-3 sub-types say on which images and along
+    which axis.
+
+    NO_GT is deliberately not a tier. An image without ground truth is
+    unscored, not universally failed, and folding it into tier 2 would inflate
+    the apparent failure count.
+    """
+
+    ALL_CORRECT = 1
+    ALL_WRONG = 2
+    CONTESTED = 3
+
+    CONSENSUS = {
+        ALL_CORRECT: "all_correct",
+        ALL_WRONG:   "all_wrong",
+        CONTESTED:   "contested",
+    }
+    NO_GT_CONSENSUS = "no_gt"
+
+    @classmethod
+    def classify(cls, n_correct, n_with_gt):
+        """Return (tier, consensus) for one image. Tier is None without GT."""
+        if n_with_gt == 0:
+            return None, cls.NO_GT_CONSENSUS
+        if n_correct == n_with_gt:
+            tier = cls.ALL_CORRECT
+        elif n_correct == 0:
+            tier = cls.ALL_WRONG
+        else:
+            tier = cls.CONTESTED
+        return tier, cls.CONSENSUS[tier]
+
+    @staticmethod
+    def difficulty(n_correct, n_with_gt):
+        """Fraction of scored combinations that got this image wrong.
+
+        None without ground truth — 0.0 would read as 'every combination was
+        right', the opposite of 'unknown'.
+        """
+        if not n_with_gt:
+            return None
+        return 1 - (n_correct / n_with_gt)
+
+
+class SubType:
+    """Vocabulary for why tier-3 combinations disagreed.
+
+    Multi-label: one image can split along several axes at once.
+
+    Note the asymmetry. MODEL_SPLIT and METHOD_SPLIT key on *correctness*
+    differing. PROMPT_SPLIT keys on the predicted *label* differing — it
+    detects label instability across prompts, which is a distinct phenomenon
+    from one prompt happening to be right. COMBO_SPLIT is the catch-all for
+    disagreement matching none of the above, so it should not be read as a
+    finding in itself.
+    """
+
+    MODEL_SPLIT = "model_split"
+    METHOD_SPLIT = "method_split"
+    METHOD_REGRESSION = "method_regression"
+    PROMPT_SPLIT = "prompt_split"
+    COMBO_SPLIT = "combo_split"
+
+
 def compute_per_image_tiers(rows):
     """
     Group rows by image, compute per-image tier and sub-types.
 
-    Tier 1: all combos correct
-    Tier 2: all combos wrong
-    Tier 3: contested — with sub-types:
-      model_split       correct for one model, wrong for the other (same method+prompt)
-      method_split      correct for one method, wrong for another (same model+prompt)
-      method_regression correct in baseline but wrong in DeGF or ONLY
-      prompt_split      same model+method, different answers across prompts
-      combo_split       doesn't fit neatly into above categories
+    See OutcomeTier for what the tiers mean and SubType for the sub-type
+    vocabulary, including why prompt_split keys on labels rather than
+    correctness.
     """
     image_groups = defaultdict(list)
     for row in rows:
@@ -156,25 +228,12 @@ def compute_per_image_tiers(rows):
         n_correct = sum(1 for r in image_rows if _bool(r.get("regex_correct", False)))
         n_with_gt = sum(1 for r in image_rows if r.get("gt_label"))
 
-        difficulty_score = 1 - (n_correct / n_with_gt) if n_with_gt else None
-
-        # Tier assignment
-        if n_with_gt == 0:
-            tier = None
-            consensus = "no_gt"
-        elif n_correct == n_with_gt:
-            tier = 1
-            consensus = "all_correct"
-        elif n_correct == 0:
-            tier = 2
-            consensus = "all_wrong"
-        else:
-            tier = 3
-            consensus = "contested"
+        difficulty_score = OutcomeTier.difficulty(n_correct, n_with_gt)
+        tier, consensus = OutcomeTier.classify(n_correct, n_with_gt)
 
         # Sub-types (Tier 3 only)
         sub_types = []
-        if tier == 3:
+        if tier == OutcomeTier.CONTESTED:
             # model_split: does correctness vary by model (same method+prompt)?
             mp_groups = defaultdict(list)
             for r in image_rows:
@@ -184,7 +243,7 @@ def compute_per_image_tiers(rows):
                 if len(models) > 1:
                     corr_by_model = {r["model_tag"]: _bool(r.get("regex_correct")) for r in grp}
                     if len(set(corr_by_model.values())) > 1:
-                        sub_types.append("model_split")
+                        sub_types.append(SubType.MODEL_SPLIT)
                         break
 
             # method_split: does correctness vary by method (same model+prompt)?
@@ -195,7 +254,7 @@ def compute_per_image_tiers(rows):
                     if len(methods) > 1:
                         corr = {r["method"]: _bool(r.get("regex_correct")) for r in grp}
                         if len(set(corr.values())) > 1:
-                            sub_types.append("method_split")
+                            sub_types.append(SubType.METHOD_SPLIT)
                             break
                 else:
                     continue
@@ -213,7 +272,7 @@ def compute_per_image_tiers(rows):
                             for m, r in grp.items() if m != "baseline"
                         )
                         if baseline_ok and any_method_fail:
-                            sub_types.append("method_regression")
+                            sub_types.append(SubType.METHOD_REGRESSION)
                             break
                 else:
                     continue
@@ -225,14 +284,14 @@ def compute_per_image_tiers(rows):
                     grp = [r for r in image_rows if r["model_tag"] == r_model and r["method"] == r_method]
                     labels = {r.get("parsed_label") for r in grp if r.get("parsed_label")}
                     if len(labels) > 1:
-                        sub_types.append("prompt_split")
+                        sub_types.append(SubType.PROMPT_SPLIT)
                         break
                 else:
                     continue
                 break
 
             if not sub_types:
-                sub_types = ["combo_split"]
+                sub_types = [SubType.COMBO_SPLIT]
 
         sub_types = sorted(set(sub_types))
 
@@ -241,15 +300,15 @@ def compute_per_image_tiers(rows):
         most_common_pred = max(set(all_predicted), key=all_predicted.count) if all_predicted else None
 
         failure_types = []
-        if tier == 2:
+        if tier == OutcomeTier.ALL_WRONG:
             # All wrong — classify by what the model predicted instead
             if most_common_pred and most_common_pred != gt_label:
                 failure_types.append(f"systematic_misclass_as_{most_common_pred}")
-        if tier == 3 and "method_regression" in sub_types:
+        if tier == OutcomeTier.CONTESTED and SubType.METHOD_REGRESSION in sub_types:
             failure_types.append("method_induced_regression")
-        if tier == 3 and "prompt_split" in sub_types:
+        if tier == OutcomeTier.CONTESTED and SubType.PROMPT_SPLIT in sub_types:
             failure_types.append("prompt_sensitive")
-        if tier == 3 and "model_split" in sub_types:
+        if tier == OutcomeTier.CONTESTED and SubType.MODEL_SPLIT in sub_types:
             failure_types.append("model_sensitive")
         if any(_bool(r.get("hedge_detected")) for r in image_rows):
             failure_types.append("hedge")
