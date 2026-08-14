@@ -88,21 +88,83 @@ def load_meta_map(output_root):
     return meta_map
 
 
-def extract_combo_fields(rec: dict, meta_map: dict):
-    """Return (model_tag, method, prompt_stem) for a record."""
-    source_stem = rec.get("_source_stem", "")
-    meta = meta_map.get(source_stem, {})
+class ComboIdentity:
+    """Which (model, method, prompt) combination produced a record.
 
-    model_tag = meta.get("model") or rec.get("model_tag") or rec.get("model_id", "unknown")
-    method = meta.get("method") or rec.get("method", "unknown")
-    prompt_stem = meta.get("prompt_stem", "")
-    if not prompt_stem:
-        # Fallback: parse from run_name field (e.g. "llava_baseline_promptv3" → "promptv3")
+    This is the grouping key for every metric downstream, and resolving it
+    wrong is silent: a bad key does not raise, it splits one combination into
+    several or merges two into one, changing every aggregate without any error.
+    That risk is why the resolution order is stated here rather than inlined.
+
+    Sources are tried in descending trustworthiness:
+
+      1. the sidecar meta_*.json written by the inference job — authoritative,
+         since the job recorded what it actually ran
+      2. fields on the record itself
+      3. for the prompt only, parsed out of run_name
+
+    `model_tag` is preferred over `model_id` because the latter is the model's
+    own checkpoint name, which varies between runs of the same model and would
+    fragment one combination into several.
+    """
+
+    UNKNOWN = "unknown"
+    #: run_name convention: {model}_{method}_{stem}
+    RUN_NAME_PARTS = 3
+
+    def __init__(self, model_tag, method, prompt_stem):
+        self.model_tag = model_tag
+        self.method = method
+        self.prompt_stem = prompt_stem
+
+    @classmethod
+    def from_record(cls, rec: dict, meta_map: dict) -> "ComboIdentity":
+        meta = meta_map.get(rec.get("_source_stem", ""), {})
+        return cls(
+            model_tag=(meta.get("model")
+                       or rec.get("model_tag")
+                       or rec.get("model_id", cls.UNKNOWN)),
+            method=meta.get("method") or rec.get("method", cls.UNKNOWN),
+            prompt_stem=meta.get("prompt_stem") or cls._prompt_from_run_name(rec),
+        )
+
+    @classmethod
+    def _prompt_from_run_name(cls, rec: dict) -> str:
+        """Recover the prompt stem from run_name, e.g. llava_baseline_promptv3.
+
+        Only the documented {model}_{method}_{stem} shape is split. A shorter
+        run_name does not follow the convention, so its last underscore-part
+        would not be a prompt stem — the whole string is used instead, which is
+        wrong-but-visible rather than wrong-and-plausible.
+        """
         run_name = rec.get("run_name", "")
         parts = run_name.split("_")
-        prompt_stem = parts[-1] if len(parts) >= 3 else run_name or "unknown"
+        if len(parts) >= cls.RUN_NAME_PARTS:
+            return parts[-1]
+        return run_name or cls.UNKNOWN
 
-    return model_tag, method, prompt_stem
+    def as_tuple(self):
+        return (self.model_tag, self.method, self.prompt_stem)
+
+    def __eq__(self, other):
+        if isinstance(other, ComboIdentity):
+            return self.as_tuple() == other.as_tuple()
+        return NotImplemented
+
+    def __hash__(self):
+        return hash(self.as_tuple())
+
+    def __repr__(self):
+        return "ComboIdentity(%s, %s, %s)" % self.as_tuple()
+
+
+def extract_combo_fields(rec: dict, meta_map: dict):
+    """Return (model_tag, method, prompt_stem) for a record.
+
+    Compatibility facade over ComboIdentity.from_record(); see that class for
+    the resolution order and why it matters.
+    """
+    return ComboIdentity.from_record(rec, meta_map).as_tuple()
 
 
 def build_per_records(records, gt, normalize_state,
@@ -380,11 +442,23 @@ def build_combo_summary(rows):
 
 
 def write_csv(path, rows):
+    """Write `rows` (list of dicts) to `path`, creating parent directories.
+
+    Columns come from the first row, so callers must supply uniform keys.
+
+    Empty input writes an empty file rather than skipping: a present-but-empty
+    file distinguishes "this ran and found nothing" from "this never ran" when
+    reading a run directory afterwards.
+
+    The mkdir applies to BOTH branches. It previously ran only when there were
+    rows, so a run producing zero records crashed with FileNotFoundError here
+    — in exactly the situation where the empty output is the diagnostic.
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
     if not rows:
         path.write_text("")
         return
     fieldnames = list(rows[0].keys())
-    path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
