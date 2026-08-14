@@ -121,6 +121,12 @@ directly. See [visual_classification/README.md](visual_classification/README.md)
 
 ---
 
+## Models
+
+Every model the pipelines use, with download instructions and a disk budget,
+is documented in [MODELS.md](MODELS.md). Most downloads are automatic; that
+file is for when they are not.
+
 ## Path Resolution
 
 Every method repo locates the image set through `CASTOR/benchybench_paths.sh`,

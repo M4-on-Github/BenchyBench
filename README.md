@@ -88,6 +88,7 @@ Inference and the vLLM-backed evaluation pipelines are cluster-only.
 |------|-----------|
 | `PIPELINES.md` | Index of every pipeline across all four repos |
 | `METHOD_NOTES.md` | How DeGF and ONLY decoding actually work, read from the code |
+| `MODELS.md` | Every model used, where it lives, and how it is obtained |
 | `tests/` | Local test suites — no cluster or GPU required |
 | `visual_classification/` | Integrated benchmark harness (see below) |
 | `all_maritime_prompts/` | Shared prompt library |
