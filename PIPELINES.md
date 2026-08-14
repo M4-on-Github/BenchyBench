@@ -187,49 +187,23 @@ enforceable rather than remembered.
 anything needing model weights. A `--dry-run` on the cluster remains the check
 for those.
 
-### What is tested, and what is deliberately not
+### Structure
 
-Test coverage follows a rule: **code is restructured only where the change can
-be verified.** Everything below the line is left alone on purpose.
+Every first-party pipeline module carries class structure for its core logic,
+and each class documents the decisions that would otherwise have to be
+reverse-engineered from the arithmetic. The only procedural files left are
+`__init__.py` markers and test files, where classes would add nothing.
 
-| Covered | Why it is safe to touch |
-|---|---|
-| `visual_classification/*.py` | Pure data processing over CSV and JSONL |
-| `CASTOR/prepare_dataset.py` (×3) | File I/O only; runs in milliseconds |
-| `CASTOR/run_config.py` (×3) | Config precedence; stdlib only, no model imports |
-| `Eval_CASTOR/shared/metrics.py` | Pure functions, no I/O |
-| `CASTOR/benchybench_paths.sh` (×3) | Path logic over a directory tree |
-| `vcd_add_noise.py` (×2) | Pure tensor math — no weights, so verifiable |
+**`DeGF/degf_utils/`, `ONLY/only_utils/` and both `utils/` are excluded on
+purpose.** They implement the published ICLR and ICCV methods and are kept
+BYTE-IDENTICAL to the papers' code, so results stay directly diffable against
+the upstream repositories and no local edit can move a published number. What
+reading them taught is recorded in [METHOD_NOTES.md](METHOD_NOTES.md) instead
+of by editing the files.
 
-The last two entries are worth noting. Config handling was *made* testable by
-moving it out of `run_inference.py`, which imports the vendored model stack and
-therefore cannot load outside the container. And `add_diffusion_noise` is
-paper-method code that turned out to need no weights at all — it was assumed
-untestable until that was actually checked.
-
-**Deliberately not restructured:**
-
-| Left alone | Why |
-|---|---|
-| `DeGF/degf_utils/`, `ONLY/only_utils/`, `utils/` | Published paper implementations — kept byte-identical; documented in METHOD_NOTES.md |
-| `ONLY/only_utils/only_sample.py` | ICCV 2025 decoding loop; same |
-| `CASTOR/run_inference.py` model path (×3) | Forward passes; needs a GPU and weights |
-| `QWEN-Maritime/CASTOR/self_verify/`, `degf_ablate/` | Same |
-| `degf_utils/image_*.py` | Wrap Stable Diffusion / CLIP; require downloads |
-
-These execute published methods and cannot be exercised without a GPU and model
-weights. A refactor there could change decoding in a way that produces
-*plausible but different* numbers — no crash, no error, just results that
-silently stop matching the papers. That is the exact failure mode the rest of
-this work exists to eliminate, so introducing it here would be self-defeating.
-
-The boundary is drawn at **what can be verified**, not at what looks difficult.
-Where a check showed something was testable after all — `add_diffusion_noise`,
-and the config layer once extracted — it was brought into coverage.
-
-If the remaining files do need changing, the prerequisite is a fixed-seed
-reference run captured beforehand so output can be diffed byte-for-byte. Local
-tests cannot substitute for that.
+If they ever must change, capture a fixed-seed reference run first so output
+can be diffed byte-for-byte afterwards. Local tests verify tensor properties;
+they cannot tell you whether a changed number is still the published method.
 
 ## Known Gaps
 
