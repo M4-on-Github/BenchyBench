@@ -7,12 +7,18 @@ introduced when the standalone repos were wrapped by BenchyBench.
 
 | # | Finding | Status |
 |---|---------|--------|
-| 1 | P8+ `config.yaml` points at a directory that does not exist | **open** |
-| 2 | "run from `~/<Repo>/`" instructions assume the pre-BenchyBench layout | **open** — docs |
-| 3 | QWEN-Maritime docs say `~/QWEN`; the repo is `QWEN-Maritime` | **open** — docs |
-| 4 | Cross-repo container binds assume siblings at `~/` | **partly fixed** — `DEGF_REPO` corrected in code; comments still stale |
-| 5 | `SLURM_SUBMIT_DIR` trusted without validation | **fixed** |
-| 6 | Stale layout descriptions in READMEs and SPECs | **open** — docs |
+| 1 | P8+ `config.yaml` points at a directory that does not exist | **fixed** |
+| 2 | "run from `~/<Repo>/`" instructions assume the pre-BenchyBench layout | **fixed** |
+| 3 | QWEN-Maritime docs say `~/QWEN`; the repo is `QWEN-Maritime` | **fixed** |
+| 4 | Cross-repo container binds assume siblings at `~/` | **fixed** |
+| 5 | `SLURM_SUBMIT_DIR` trusted without validation | **fixed** — `submit_job.sh`; `build_container.sh` still open, low risk |
+| 6 | Stale layout descriptions in READMEs and SPECs | **fixed** |
+
+All six are addressed. Remaining: `build_container.sh` in the three method repos
+still derives `REPO` from `$SLURM_SUBMIT_DIR` unvalidated. Left alone
+deliberately — those scripts only locate a `.def` file, so a wrong root fails
+immediately on a missing file. There is no silent-wrong-source risk, which is
+the failure this sweep was chasing.
 
 Finding 5 is resolved by `CASTOR/benchybench_paths.sh`, deployed identically to
 DeGF, ONLY and QWEN-Maritime, and covered by `tests/test_paths.sh` (28 assertions

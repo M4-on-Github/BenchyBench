@@ -42,8 +42,8 @@ than DeGF.
 
 Batch submission: `CASTOR/submit.sh` → `CASTOR/submit_job.sh`.
 Prompts: `CASTOR/prompts/` (4 variants).
-Docs: repo-root `README.md` is the upstream paper README. **The CASTOR port
-itself is undocumented** — see Known Gaps below.
+Docs: `CASTOR/README.md` covers the port; repo-root `README.md` is the upstream
+paper README; `SPEC.md` holds design intent.
 
 ### QWEN-Maritime (`QWEN-Maritime/`) — Qwen3-VL-8B
 Baseline plus DeGF and ONLY ported to Qwen for cross-method comparison.
@@ -121,19 +121,45 @@ directly. See [visual_classification/README.md](visual_classification/README.md)
 
 ---
 
+## Path Resolution
+
+Every method repo locates the image set through `CASTOR/benchybench_paths.sh`,
+a byte-identical copy in DeGF, ONLY and QWEN-Maritime. It resolves the
+BenchyBench root by probing candidates in order and **erroring rather than
+guessing**:
+
+1. `$BENCHYBENCH_ROOT` — explicit; invalid is a hard error, not a fallback
+2. `$SLURM_SUBMIT_DIR` and its parent — validated, never blindly trusted
+3. The script's own location — parent (nested), then repo (standalone)
+
+`$SLURM_SUBMIT_DIR` precedes the script location because SLURM copies a batch
+script to a spool directory, so `$0` inside a running job may point at
+`/var/spool/...` rather than the repo.
+
+Each job log records the resolved root, so a run against the wrong tree leaves
+evidence. To run a repo outside BenchyBench, set `BENCHYBENCH_ROOT` or pass
+`--image-folder`.
+
+Covered by `tests/test_paths.sh` — 28 assertions, no cluster required,
+including a simulated SLURM spool execution and a guard that the three deployed
+copies do not drift. Run it after touching any path logic:
+
+```bash
+bash tests/test_paths.sh
+```
+
 ## Known Gaps
 
 Tracked here so they aren't rediscovered later.
 
-1. **`ONLY/CASTOR/` has no documentation.** No README, SPEC, or decisions file —
-   the only docs are the upstream paper README at the repo root, which does not
-   describe the CASTOR port. The largest doc gap in the project.
-2. **`plan_coherence/improved/` is missing from `Eval_CASTOR/README.md`.** It has
-   its own README, but the top-level P1–P8 table does not mention it.
-3. **Paths may predate BenchyBench.** The submodules were built standalone and
-   later wrapped by this meta-repo. Some docs still describe the pre-wrap layout
-   — e.g. `DeGF/CASTOR/README.md` says images "travel with the repo", but they
-   now live once at `shipwreck_wiki_images/` in this repo. Path assumptions need
-   a systematic sweep across all four submodules.
-4. **`DeGF/CASTOR/prompts/` is empty** while ONLY and QWEN-Maritime have
-   populated `prompts/` directories.
+1. **`DeGF/CASTOR/prompts/` is empty** while ONLY and QWEN-Maritime have
+   populated `prompts/` directories. DeGF runs take their prompt path from
+   config instead.
+2. **`build_container.sh` still derives `REPO` from `$SLURM_SUBMIT_DIR`**
+   unvalidated, in all three method repos. Low risk — those scripts only locate
+   a `.def` file, so a wrong root fails loudly on a missing file rather than
+   silently reading the wrong data.
+
+Resolved: ONLY's CASTOR port is now documented; P8+ is indexed in
+`Eval_CASTOR/README.md`; the pre-BenchyBench path assumptions were swept across
+all four submodules. See `PATH_SWEEP_FINDINGS.md` for the audit.
