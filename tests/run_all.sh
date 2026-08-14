@@ -38,6 +38,7 @@ run "shared.metrics (python)"     $PYTHON tests/test_shared_metrics.py
 run "run_config (python)"        $PYTHON tests/test_run_config.py
 run "diffusion noise (python)"   $PYTHON tests/test_diffusion_noise.py
 run "documentation (python)"     $PYTHON tests/test_documentation.py
+run "contrast strategies (py)"   $PYTHON tests/test_contrast_strategies.py
 
 printf "\n════════════════════════════════════\n"
 if [[ "$FAILED" -eq 0 ]]; then
