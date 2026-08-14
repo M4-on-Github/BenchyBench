@@ -33,6 +33,7 @@ run "health_check (python)"       $PYTHON tests/test_health_check.py
 run "regex_eval (python)"         $PYTHON tests/test_regex_eval.py
 run "judge_submit (python)"       $PYTHON tests/test_judge_submit.py
 run "aggregate_report (python)"   $PYTHON tests/test_aggregate_report.py
+run "prepare_dataset (python)"    $PYTHON tests/test_prepare_dataset.py
 
 printf "\n════════════════════════════════════\n"
 if [[ "$FAILED" -eq 0 ]]; then
