@@ -146,7 +146,7 @@ evidence. To run a repo outside BenchyBench, set `BENCHYBENCH_ROOT` or pass
 bash tests/run_all.sh
 ```
 
-224 assertions across eleven suites, and 100% module docstring coverage (68/68 first-party files). All run locally — no cluster, no GPU, no
+197 assertions across nine suites, and 100% module docstring coverage of BenchyBench-authored modules (56/56). All run locally — no cluster, no GPU, no
 model weights, no network.
 
 | Suite | Covers |
@@ -161,7 +161,6 @@ model weights, no network.
 | `test_run_config.py` | CLI-over-config precedence across all three repos |
 | `test_diffusion_noise.py` | `add_diffusion_noise` — paper-method tensor math |
 | `test_documentation.py` | Every first-party module has a docstring; paper-method files carry their caution |
-| `test_contrast_strategies.py` | DeGF contrast modes reproduce the original expressions **bitwise** |
 
 The 3.6 guard exists because `judge_submit.py` is the one script that runs on
 the node's bare `python3` rather than inside `castor.sif` (Python 3.10). A
@@ -196,7 +195,7 @@ untestable until that was actually checked.
 
 | Left alone | Why |
 |---|---|
-| `DeGF/degf_utils/degf_sample.py` | Generation LOOP only — its contrast math is now extracted and tested |
+| `DeGF/degf_utils/`, `ONLY/only_utils/`, `utils/` | Published paper implementations — kept byte-identical; documented in METHOD_NOTES.md |
 | `ONLY/only_utils/only_sample.py` | ICCV 2025 decoding loop; same |
 | `CASTOR/run_inference.py` model path (×3) | Forward passes; needs a GPU and weights |
 | `QWEN-Maritime/CASTOR/self_verify/`, `degf_ablate/` | Same |

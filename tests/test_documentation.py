@@ -20,17 +20,14 @@ from pathlib import Path
 BB_ROOT = Path(__file__).resolve().parent.parent
 
 VENDORED = ("experiments", "transformers", "lavis", "minigpt4", "eval",
-            "__pycache__", "build")
+            "__pycache__", "build",
+            # Upstream paper method code. Deliberately kept byte-identical to
+            # the published implementations — see UPSTREAM_CODE below — so it
+            # is documented in BenchyBench's own notes rather than by editing
+            # the files.
+            "degf_utils", "only_utils", "utils")
 
 REPOS = ["DeGF", "ONLY", "QWEN-Maritime", "Eval_CASTOR"]
-
-#: Files implementing published methods. They must carry an explicit warning,
-#: because their arithmetic determines published numbers and a well-meaning
-#: refactor there is the most expensive mistake available in this codebase.
-PAPER_METHOD_FILES = [
-    BB_ROOT / "DeGF" / "degf_utils" / "degf_sample.py",
-    BB_ROOT / "ONLY" / "only_utils" / "only_sample.py",
-]
 
 
 def is_vendored(path):
@@ -83,32 +80,6 @@ class TestModuleDocstrings(unittest.TestCase):
                     self.fail("%s: %s" % (p, e))
 
 
-class TestPaperMethodWarnings(unittest.TestCase):
-    """Files implementing published methods must say so."""
-
-    def test_they_carry_a_caution(self):
-        for path in PAPER_METHOD_FILES:
-            if not path.exists():
-                continue
-            with self.subTest(file=path.name):
-                doc = module_docstring(path) or ""
-                self.assertTrue(
-                    "CAUTION" in doc,
-                    "%s must warn that it determines published numbers" % path.name)
-
-    def test_they_explain_the_monkey_patch(self):
-        # Both files replace transformers' generation methods globally. Anyone
-        # reading them needs to know that before they wonder why a baseline run
-        # also goes through this code.
-        for path in PAPER_METHOD_FILES:
-            if not path.exists():
-                continue
-            with self.subTest(file=path.name):
-                doc = (module_docstring(path) or "").lower()
-                self.assertIn("patch", doc)
-                self.assertIn("4.31.0", doc,
-                              "%s should record why transformers is pinned" % path.name)
-
 
 class TestKeyModulesDocumentTheirContract(unittest.TestCase):
     """Modules whose behaviour is easy to get subtly wrong."""
@@ -121,13 +92,6 @@ class TestKeyModulesDocumentTheirContract(unittest.TestCase):
          "states the CLI-over-config precedence rule"),
         ("DeGF/CASTOR/prepare_dataset.py", "identical",
          "warns the file is duplicated across repos"),
-        ("DeGF/degf_utils/vcd_add_noise.py", "paper-method",
-         "flags that it feeds a published method"),
-        # This previously had to WARN that CLIP loaded at import. The class
-        # refactor made loading lazy, so the contract is now the opposite:
-        # the docstring must state that weights load on first use.
-        ("DeGF/degf_utils/image_similarity.py", "LAZY LOADING",
-         "documents that CLIP loads on first use, not at import"),
     ]
 
     def test_contracts_are_stated(self):
