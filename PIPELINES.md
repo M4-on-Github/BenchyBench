@@ -146,7 +146,7 @@ evidence. To run a repo outside BenchyBench, set `BENCHYBENCH_ROOT` or pass
 bash tests/run_all.sh
 ```
 
-129 assertions across five suites. All run locally — no cluster, no GPU, no
+196 assertions across nine suites. All run locally — no cluster, no GPU, no
 model weights, no network.
 
 | Suite | Covers |
@@ -156,6 +156,10 @@ model weights, no network.
 | `test_regex_eval.py` | Combination identity resolution and its fallback chain |
 | `test_judge_submit.py` | Judge record keying, plus a **Python 3.6 compatibility guard** |
 | `test_aggregate_report.py` | Outcome tiering and sub-type classification |
+| `test_prepare_dataset.py` | Dataset building across all three repo copies |
+| `test_shared_metrics.py` | `normalize_state`, JSON extraction — the eval foundation |
+| `test_run_config.py` | CLI-over-config precedence across all three repos |
+| `test_diffusion_noise.py` | `add_diffusion_noise` — paper-method tensor math |
 
 The 3.6 guard exists because `judge_submit.py` is the one script that runs on
 the node's bare `python3` rather than inside `castor.sif` (Python 3.10). A
@@ -175,28 +179,40 @@ be verified.** Everything below the line is left alone on purpose.
 |---|---|
 | `visual_classification/*.py` | Pure data processing over CSV and JSONL |
 | `CASTOR/prepare_dataset.py` (×3) | File I/O only; runs in milliseconds |
+| `CASTOR/run_config.py` (×3) | Config precedence; stdlib only, no model imports |
 | `Eval_CASTOR/shared/metrics.py` | Pure functions, no I/O |
 | `CASTOR/benchybench_paths.sh` (×3) | Path logic over a directory tree |
+| `vcd_add_noise.py` (×2) | Pure tensor math — no weights, so verifiable |
+
+The last two entries are worth noting. Config handling was *made* testable by
+moving it out of `run_inference.py`, which imports the vendored model stack and
+therefore cannot load outside the container. And `add_diffusion_noise` is
+paper-method code that turned out to need no weights at all — it was assumed
+untestable until that was actually checked.
 
 **Deliberately not restructured:**
 
 | Left alone | Why |
 |---|---|
-| `DeGF/degf_utils/degf_sample.py` | Implements the ICLR 2025 decoding method |
-| `ONLY/only_utils/only_sample.py` | Implements the ICCV 2025 decoding method |
-| `CASTOR/run_inference.py` (×3) | Model inference; needs a GPU and weights |
+| `DeGF/degf_utils/degf_sample.py` | ICLR 2025 decoding loop; needs a model to run |
+| `ONLY/only_utils/only_sample.py` | ICCV 2025 decoding loop; same |
+| `CASTOR/run_inference.py` model path (×3) | Forward passes; needs a GPU and weights |
 | `QWEN-Maritime/CASTOR/self_verify/`, `degf_ablate/` | Same |
+| `degf_utils/image_*.py` | Wrap Stable Diffusion / CLIP; require downloads |
 
-These implement published methods and cannot be exercised without a GPU and
-model weights. A refactor there could change decoding behaviour in a way that
-produces *plausible but different* numbers — no crash, no error, just results
-that silently stop matching the papers. That is precisely the failure mode the
-rest of this work exists to eliminate, so it would be self-defeating to
-introduce it here.
+These execute published methods and cannot be exercised without a GPU and model
+weights. A refactor there could change decoding in a way that produces
+*plausible but different* numbers — no crash, no error, just results that
+silently stop matching the papers. That is the exact failure mode the rest of
+this work exists to eliminate, so introducing it here would be self-defeating.
 
-If those files do need changing, the prerequisite is a fixed-seed reference
-run captured beforehand, so output can be diffed byte-for-byte afterwards.
-Local tests cannot substitute for that.
+The boundary is drawn at **what can be verified**, not at what looks difficult.
+Where a check showed something was testable after all — `add_diffusion_noise`,
+and the config layer once extracted — it was brought into coverage.
+
+If the remaining files do need changing, the prerequisite is a fixed-seed
+reference run captured beforehand so output can be diffed byte-for-byte. Local
+tests cannot substitute for that.
 
 ## Known Gaps
 
