@@ -43,6 +43,11 @@ VALID_STATES = ["aground", "capsized", "on_fire", "sunken"]
 # ─────────────────────────────────────────────────────────────────────────────
 
 def read_csv(path):
+    """Read a CSV into a list of dicts. Missing file yields [], not an error.
+
+    Report sections degrade rather than fail: a run submitted with --skip-judge
+    has no judge CSVs, and every other section should still render.
+    """
     if not path.exists():
         return []
     with path.open(encoding="utf-8") as f:
@@ -50,6 +55,13 @@ def read_csv(path):
 
 
 def write_csv(path, rows):
+    """Write `rows` (list of dicts) to `path`, creating parent directories.
+
+    Columns are taken from the first row, so callers must supply uniform keys.
+    Empty input writes an empty file rather than skipping: a present-but-empty
+    file distinguishes "this analysis ran and found nothing" from "this
+    analysis never ran", which matters when reading a run directory later.
+    """
     if not rows:
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text("")
@@ -62,6 +74,13 @@ def write_csv(path, rows):
 
 
 def _bool(v):
+    """Coerce a CSV field to bool.
+
+    Needed because CSV round-trips lose types: a bool written as True comes
+    back as the string "True", which is truthy either way — but so is "False".
+    Anything outside the accepted set is False, so a blank or absent column
+    reads as False rather than raising.
+    """
     if isinstance(v, bool):
         return v
     return str(v).strip().lower() in ("true", "1", "yes")
@@ -305,6 +324,17 @@ def compute_prompt_stability(rows):
 
     # Compute Kendall's tau between each pair of combos
     def _kendall_tau(rank_a: list, rank_b: list):
+        """Kendall's tau-a between two rankings: +1 identical, -1 reversed, 0 unrelated.
+
+        Measures whether two (model, method) combinations rank the prompts the
+        same way. High tau means prompt quality is a property of the prompt;
+        low tau means it is entangled with the model, and "best prompt" is not
+        a transferable claim.
+
+        This is tau-a, which makes no tie correction — accuracies are
+        coarse-grained and ties are common, so values are conservative
+        (biased toward 0) when several prompts score identically.
+        """
         n = len(rank_a)
         concordant = discordant = 0
         for i in range(n):
@@ -659,6 +689,17 @@ def _judge_section_html(per_record_rows):
 
     # ── Regex–Judge Cohen's κ ─────────────────────────────────────────────────
     def _kappa(c):
+        """Cohen's kappa between the regex and judge verdicts for one combination.
+
+        Chance-corrected agreement, which raw agreement is not: when a
+        combination is 90% correct, regex and judge agree ~82% of the time by
+        chance alone, so a high raw agreement can mean nothing.
+
+        Returns None for an empty combination. Returns 1.0 in the degenerate
+        case where expected agreement is 1 — both raters always give the same
+        verdict, leaving no variance to disagree over — since 0/0 is otherwise
+        undefined and reporting perfect agreement is the honest reading.
+        """
         n = c["n"]
         if n == 0: return None
         p_o = (c["both_correct"] + c["both_wrong"]) / n
@@ -868,6 +909,28 @@ def _per_class_html(per_record_rows):
 # ─────────────────────────────────────────────────────────────────────────────
 
 def run_outcome(output_root, benchybench_root, run_name):
+    """Phase 1 of two: merge judge verdicts and classify per-image outcomes.
+
+    Reads eval/regex/per_record.csv, merges judge consensus when available,
+    then writes eval/outcome_analysis/ — per_image.csv plus a CSV per tier.
+
+    Images are grouped by how the combinations agreed:
+
+      Tier 1  every combination correct    — the task's floor
+      Tier 2  every combination wrong      — candidates for bad ground truth
+      Tier 3  combinations disagree        — where method comparison lives
+
+    Tier 3 is the reason this phase exists. A run-level accuracy delta says one
+    method beat another; the tier-3 split says on which images, and whether the
+    difference tracks the method, the model, or the prompt. Sub-types are
+    multi-label, since an image can split along several axes at once.
+
+    `run_name` is REQUIRED to merge judge output — it keys the consensus files
+    under Eval_CASTOR/results/p5_judge/<run_name>/. Omitting it is silent: the
+    phase completes normally and every judge column is empty, which is
+    indistinguishable from a --skip-judge run. Callers must pass it whenever
+    the judge phase ran.
+    """
     eval_dir = output_root / "eval"
     outcome_dir = eval_dir / "outcome_analysis"
     outcome_dir.mkdir(parents=True, exist_ok=True)
@@ -955,6 +1018,20 @@ def run_outcome(output_root, benchybench_root, run_name):
 
 
 def run_report(output_root, benchybench_root, run_name):
+    """Phase 2 of two: render the human-readable report from phase 1's CSVs.
+
+    Writes report/ — report.html plus report.json and run_meta.json for
+    programmatic use. Reads only files on disk, so it is safe to re-run after
+    editing presentation without recomputing any analysis.
+
+    Must run after run_outcome(); it reads eval/outcome_analysis/. Sections
+    whose inputs are missing are skipped rather than raising, so a
+    --skip-judge run still produces a complete report minus the judge
+    sections.
+
+    The HTML is self-contained — plots and image thumbnails are inlined as
+    base64 — so it can be copied off the cluster as a single file.
+    """
     print(f"Generating HTML report for run: {run_name}")
     report_dir = output_root / "report"
     report_dir.mkdir(parents=True, exist_ok=True)

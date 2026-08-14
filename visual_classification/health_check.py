@@ -49,6 +49,12 @@ _CLASS_PATTERNS = {
 
 
 def normalize_state(text):
+    """Return the first casualty state mentioned in `text`, or None.
+
+    First match wins, in STATE_MAP order — so a hedged answer naming several
+    states yields only one. Use detect_hedge() to find that case; this function
+    cannot distinguish a confident answer from an ambiguous one.
+    """
     for cls, pat in _CLASS_PATTERNS.items():
         if pat.search(text):
             return cls
@@ -56,6 +62,12 @@ def normalize_state(text):
 
 
 def detect_repetition(text, ngram = 5, threshold = 3):
+    """True if any `ngram`-word sequence repeats at least `threshold` times.
+
+    Catches degenerate decoding loops, where a model emits the same phrase
+    until it hits the token limit. Texts shorter than ngram * threshold words
+    cannot repeat that often and return False without scanning.
+    """
     words = text.lower().split()
     if len(words) < ngram * threshold:
         return False
@@ -69,6 +81,13 @@ def detect_repetition(text, ngram = 5, threshold = 3):
 
 
 def detect_hedge(text):
+    """True if `text` names more than one casualty state.
+
+    The task expects a single classification, so naming several means the model
+    hedged or reasoned aloud without committing. Such a record still parses —
+    normalize_state() returns whichever state matched first — which is exactly
+    why hedging needs detecting separately: it inflates apparent parse success.
+    """
     found = set()
     for cls, pat in _CLASS_PATTERNS.items():
         if pat.search(text):
@@ -77,6 +96,13 @@ def detect_hedge(text):
 
 
 def detect_refusal(text):
+    """True if `text` declines to answer.
+
+    Keyword scan, so it is deliberately conservative: it catches explicit
+    refusals ("cannot determine", "no image") but not a confidently stated
+    wrong answer, which is indistinguishable from a correct one at this level
+    and is left to the evaluation pipelines.
+    """
     keywords = ["cannot", "can't", "unable to determine", "unclear", "not sure",
                 "impossible to tell", "no image", "no photo", "no picture"]
     lower = text.lower()
@@ -84,6 +110,16 @@ def detect_refusal(text):
 
 
 def load_records(output_root):
+    """Load every inference record from output_root/inference/answers_*.jsonl.
+
+    Each record gains a `_source_stem` field naming the file it came from,
+    which downstream grouping uses to recover the (model, method, prompt)
+    combination.
+
+    Malformed JSON lines are skipped silently: a partial write from an
+    interrupted job should not block the health check that exists to report it.
+    Line counts therefore reflect parseable records, not bytes written.
+    """
     infer_dir = output_root / "inference"
     records = []
     for path in sorted(infer_dir.glob("answers_*.jsonl")):
@@ -118,6 +154,13 @@ def load_meta(output_root):
 
 
 def annotate_records(records):
+    """Attach a `_health` dict to each record, in place. Returns `records`.
+
+    `length_anomaly` is measured against the mean and standard deviation of the
+    whole run, not per combination. A method that is uniformly more verbose
+    therefore shifts the baseline rather than flagging every one of its records
+    — the flag marks outliers relative to the run, not relative to a method.
+    """
     lengths = [len(rec.get("text", "")) for rec in records if rec.get("text")]
     global_mean = mean(lengths) if lengths else 0
     global_std = stdev(lengths) if len(lengths) > 1 else 0
@@ -135,6 +178,25 @@ def annotate_records(records):
 
 
 def per_combo_stats(records):
+    """Aggregate annotated records by (model, method, prompt_stem).
+
+    Returns {combo_tuple: stats_dict}. Two judgements are encoded here, and
+    they are deliberately not equivalent:
+
+    `label_bias` is a WARNING. A model predicting one class for over 40% of
+    parsed records may be broken, or may be right — the CASTOR image set is not
+    balanced, and 'aground' genuinely dominates. Treating that as an error
+    would fail the run for a property of the dataset, so it is reported and
+    never gates.
+
+    `gate_fail` is a HARD FAILURE, and triggers only on parse failure above
+    15%. That threshold is not a quality bar: accuracy simply cannot be
+    computed from output no parser can read, so continuing would produce
+    metrics over a silently shrinking denominator.
+
+    Both checks are suppressed below MIN_BIAS_N records, since neither a
+    distribution nor a rate is meaningful on smoke-test samples.
+    """
     combos = defaultdict(list)
     for rec in records:
         model = rec.get("model_tag") or rec.get("model_id", "unknown")

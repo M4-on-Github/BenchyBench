@@ -30,6 +30,7 @@ from pathlib import Path
 
 
 def load_per_record_csv(per_record_path):
+    """Read the regex phase's per_record.csv into a list of dicts."""
     with per_record_path.open(encoding="utf-8") as f:
         return list(csv.DictReader(f))
 

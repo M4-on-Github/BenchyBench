@@ -27,6 +27,16 @@ from statistics import mean, stdev, StatisticsError
 
 
 def _setup_eval_imports(benchybench_root):
+    """Put Eval_CASTOR on sys.path so its shared metrics can be imported.
+
+    Eval_CASTOR is a sibling submodule, not an installed package — there is no
+    pip install for it. Importing rather than reimplementing matters here:
+    label normalisation must be identical to what the evaluation pipelines use,
+    or regex accuracy computed here would not be comparable to theirs.
+
+    Inserted at position 0 so the submodule wins over any same-named module
+    already installed in the environment.
+    """
     eval_path = str(benchybench_root / "Eval_CASTOR")
     if eval_path not in sys.path:
         sys.path.insert(0, eval_path)
@@ -190,6 +200,12 @@ def populate_health_flags(rows):
     g_std = stdev(lengths) if len(lengths) > 1 else 0
 
     def _repetition(text, ngram=5, threshold=3):
+        """True if any `ngram`-word sequence repeats at least `threshold` times.
+
+        Flags degenerate decoding loops. Kept in step with the identical check
+        in health_check.py: health_check gates the run, while this records the
+        flag per record so repetition can be correlated with correctness.
+        """
         words = text.lower().split()
         if len(words) < ngram * threshold:
             return False
