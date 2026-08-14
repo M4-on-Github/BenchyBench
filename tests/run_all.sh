@@ -35,6 +35,8 @@ run "judge_submit (python)"       $PYTHON tests/test_judge_submit.py
 run "aggregate_report (python)"   $PYTHON tests/test_aggregate_report.py
 run "prepare_dataset (python)"    $PYTHON tests/test_prepare_dataset.py
 run "shared.metrics (python)"     $PYTHON tests/test_shared_metrics.py
+run "run_config (python)"        $PYTHON tests/test_run_config.py
+run "diffusion noise (python)"   $PYTHON tests/test_diffusion_noise.py
 
 printf "\n════════════════════════════════════\n"
 if [[ "$FAILED" -eq 0 ]]; then
