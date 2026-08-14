@@ -140,13 +140,31 @@ Each job log records the resolved root, so a run against the wrong tree leaves
 evidence. To run a repo outside BenchyBench, set `BENCHYBENCH_ROOT` or pass
 `--image-folder`.
 
-Covered by `tests/test_paths.sh` — 28 assertions, no cluster required,
-including a simulated SLURM spool execution and a guard that the three deployed
-copies do not drift. Run it after touching any path logic:
+## Tests
 
 ```bash
-bash tests/test_paths.sh
+bash tests/run_all.sh
 ```
+
+129 assertions across five suites. All run locally — no cluster, no GPU, no
+model weights, no network.
+
+| Suite | Covers |
+|---|---|
+| `test_paths.sh` | Path resolution, incl. a simulated SLURM spool execution and a guard that the three deployed library copies do not drift |
+| `test_health_check.py` | State detection, health flags, gate-vs-warning logic |
+| `test_regex_eval.py` | Combination identity resolution and its fallback chain |
+| `test_judge_submit.py` | Judge record keying, plus a **Python 3.6 compatibility guard** |
+| `test_aggregate_report.py` | Outcome tiering and sub-type classification |
+
+The 3.6 guard exists because `judge_submit.py` is the one script that runs on
+the node's bare `python3` rather than inside `castor.sif` (Python 3.10). A
+`text=True` kwarg broke it in production once; the guard makes the constraint
+enforceable rather than remembered.
+
+**What these cannot cover:** apptainer bind behaviour, SLURM scheduling, and
+anything needing model weights. A `--dry-run` on the cluster remains the check
+for those.
 
 ## Known Gaps
 
