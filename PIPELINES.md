@@ -146,12 +146,12 @@ evidence. To run a repo outside BenchyBench, set `BENCHYBENCH_ROOT` or pass
 bash tests/run_all.sh
 ```
 
-197 assertions across nine suites, and 100% module docstring coverage of BenchyBench-authored modules (56/56). All run locally — no cluster, no GPU, no
+565 assertions across 22 suites. All run locally — no cluster, no GPU, no
 model weights, no network.
 
 | Suite | Covers |
 |---|---|
-| `test_paths.sh` | Path resolution, incl. a simulated SLURM spool execution and a guard that the three deployed library copies do not drift |
+| `test_paths.sh` | Path resolution, incl. a simulated SLURM spool execution and a drift guard on the three deployed library copies |
 | `test_health_check.py` | State detection, health flags, gate-vs-warning logic |
 | `test_regex_eval.py` | Combination identity resolution and its fallback chain |
 | `test_judge_submit.py` | Judge record keying, plus a **Python 3.6 compatibility guard** |
@@ -160,7 +160,23 @@ model weights, no network.
 | `test_shared_metrics.py` | `normalize_state`, JSON extraction — the eval foundation |
 | `test_run_config.py` | CLI-over-config precedence across all three repos |
 | `test_diffusion_noise.py` | `add_diffusion_noise` — paper-method tensor math |
-| `test_documentation.py` | Every first-party module has a docstring; paper-method files carry their caution |
+| `test_documentation.py` | Every first-party module has a docstring |
+| `test_reference_selector.py` | The five DeGF-ablation reference modes |
+| `test_judge_consensus.py` | P5 panel consensus and field majority votes |
+| `test_run_discovery.py` | P1 run discovery and its two inference heuristics |
+| `test_separated_discovery.py` | P4 directory discovery incl. the tolerated typo |
+| `test_parse_steps.py` | P8 step parsing, incl. the empty-step defect |
+| `test_judge_castor.py` | P3 prompt construction and verdict unpacking |
+| `test_assertion_coverage.py` | P7 coverage vs contamination selection |
+| `test_judge_response_parser.py` | P5 judge reply parsing and truncation handling |
+| `test_coherence_stats.py` | P8 Fleiss' kappa over the five-judge panel |
+| `test_salvage_stats.py` | P6 FDR correction and P2 resume |
+| `QWEN-Maritime/.../self_verify/tests.py` | Self-verification claim/verdict parsing |
+| `Eval_CASTOR/tests/` | Eval_CASTOR's own 154-test pytest suite |
+
+The last two already existed but were never run alongside the others, so
+regressions in them went unnoticed — four long-standing failures in
+`Eval_CASTOR/tests/test_aggregate.py` were found and fixed this way.
 
 The 3.6 guard exists because `judge_submit.py` is the one script that runs on
 the node's bare `python3` rather than inside `castor.sif` (Python 3.10). A

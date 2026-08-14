@@ -87,9 +87,29 @@ Inference and the vLLM-backed evaluation pipelines are cluster-only.
 | Path | What it is |
 |------|-----------|
 | `PIPELINES.md` | Index of every pipeline across all four repos |
+| `METHOD_NOTES.md` | How DeGF and ONLY decoding actually work, read from the code |
+| `tests/` | Local test suites — no cluster or GPU required |
 | `visual_classification/` | Integrated benchmark harness (see below) |
 | `all_maritime_prompts/` | Shared prompt library |
 | `shipwreck_wiki_images/` | CASTOR dataset (~110 images) |
+
+## Tests
+
+```bash
+bash tests/run_all.sh
+```
+
+565 assertions across 22 suites, all running locally — no cluster, no GPU, no
+model weights, no network. Covers path resolution, the `visual_classification`
+pipeline, and every Eval_CASTOR pipeline's core logic. See
+[PIPELINES.md](PIPELINES.md#tests) for what each suite covers and what none of
+them can.
+
+The method implementations in `DeGF/degf_utils/` and `ONLY/only_utils/` are
+kept **byte-identical to the published papers' code** and are not restructured,
+so results stay directly comparable with the upstream repositories. What was
+learned from reading them is recorded in [METHOD_NOTES.md](METHOD_NOTES.md)
+rather than by editing the files.
 
 ## Integrated Harness
 
