@@ -40,6 +40,7 @@ run "diffusion noise (python)"   $PYTHON tests/test_diffusion_noise.py
 run "documentation (python)"     $PYTHON tests/test_documentation.py
 run "self_verify parsers (py)"   $PYTHON QWEN-Maritime/CASTOR/self_verify/tests.py
 run "reference selector (py)"    $PYTHON tests/test_reference_selector.py
+run "judge consensus (python)"   $PYTHON tests/test_judge_consensus.py
 
 printf "\n════════════════════════════════════\n"
 if [[ "$FAILED" -eq 0 ]]; then
