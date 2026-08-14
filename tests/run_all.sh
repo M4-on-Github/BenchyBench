@@ -45,6 +45,7 @@ run "run discovery (python)"     $PYTHON tests/test_run_discovery.py
 run "separated discovery (py)"   $PYTHON tests/test_separated_discovery.py
 run "step parser (python)"       $PYTHON tests/test_parse_steps.py
 run "judge_castor (python)"      $PYTHON tests/test_judge_castor.py
+run "assertion coverage (py)"    $PYTHON tests/test_assertion_coverage.py
 
 printf "\n════════════════════════════════════\n"
 if [[ "$FAILED" -eq 0 ]]; then
