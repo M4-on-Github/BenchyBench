@@ -49,6 +49,7 @@ run "assertion coverage (py)"    $PYTHON tests/test_assertion_coverage.py
 run "judge response (python)"    $PYTHON tests/test_judge_response_parser.py
 run "coherence stats (python)"   $PYTHON tests/test_coherence_stats.py
 run "salvage stats (python)"     $PYTHON tests/test_salvage_stats.py
+run "Eval_CASTOR own suite"      $PYTHON -m pytest Eval_CASTOR/tests -q
 
 printf "\n════════════════════════════════════\n"
 if [[ "$FAILED" -eq 0 ]]; then
