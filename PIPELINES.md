@@ -166,6 +166,38 @@ enforceable rather than remembered.
 anything needing model weights. A `--dry-run` on the cluster remains the check
 for those.
 
+### What is tested, and what is deliberately not
+
+Test coverage follows a rule: **code is restructured only where the change can
+be verified.** Everything below the line is left alone on purpose.
+
+| Covered | Why it is safe to touch |
+|---|---|
+| `visual_classification/*.py` | Pure data processing over CSV and JSONL |
+| `CASTOR/prepare_dataset.py` (×3) | File I/O only; runs in milliseconds |
+| `Eval_CASTOR/shared/metrics.py` | Pure functions, no I/O |
+| `CASTOR/benchybench_paths.sh` (×3) | Path logic over a directory tree |
+
+**Deliberately not restructured:**
+
+| Left alone | Why |
+|---|---|
+| `DeGF/degf_utils/degf_sample.py` | Implements the ICLR 2025 decoding method |
+| `ONLY/only_utils/only_sample.py` | Implements the ICCV 2025 decoding method |
+| `CASTOR/run_inference.py` (×3) | Model inference; needs a GPU and weights |
+| `QWEN-Maritime/CASTOR/self_verify/`, `degf_ablate/` | Same |
+
+These implement published methods and cannot be exercised without a GPU and
+model weights. A refactor there could change decoding behaviour in a way that
+produces *plausible but different* numbers — no crash, no error, just results
+that silently stop matching the papers. That is precisely the failure mode the
+rest of this work exists to eliminate, so it would be self-defeating to
+introduce it here.
+
+If those files do need changing, the prerequisite is a fixed-seed reference
+run captured beforehand, so output can be diffed byte-for-byte afterwards.
+Local tests cannot substitute for that.
+
 ## Known Gaps
 
 Tracked here so they aren't rediscovered later.
