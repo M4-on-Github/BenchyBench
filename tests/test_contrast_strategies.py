@@ -304,6 +304,72 @@ class TestWiringMatchesOriginalBlock(unittest.TestCase):
         self.assertFalse(torch.equal(correct, swapped))
 
 
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# ONLY's strategies — same contract, different gate metric
+# ─────────────────────────────────────────────────────────────────────────────
+
+if HAVE_TORCH:
+    sys.path.insert(0, str(BB_ROOT / "ONLY"))
+    from only_utils.contrast_strategies import ONLYContrast
+
+
+@unittest.skipUnless(HAVE_TORCH, "torch not installed")
+class TestONLYEquivalence(unittest.TestCase):
+
+    @staticmethod
+    def original_tvd(logits, ref):
+        """Verbatim from only_sample.py."""
+        return torch.sum(torch.abs(nn.functional.softmax(logits, dim=-1) - nn.functional.softmax(ref, dim=-1)))
+
+    def test_tvd_matches(self):
+        for seed in range(5):
+            logits, ref = logits_pair(seed)
+            self.assertTrue(torch.equal(self.original_tvd(logits, ref),
+                                        ONLYContrast.total_variation_distance(logits, ref)),
+                            "seed=%d" % seed)
+
+    def test_full_branch_matches_the_original(self):
+        gamma, alpha_pos, alpha_neg = 0.5, 3, 1
+        for seed in range(8):
+            logits, ref = logits_pair(seed)
+            # ── original, verbatim ──
+            tvd = self.original_tvd(logits, ref)
+            if tvd < gamma:
+                expected = logits + alpha_pos * ref
+            else:
+                expected = (1 + alpha_neg) * logits - alpha_neg * ref
+            # ── extracted ──
+            actual = ONLYContrast(gamma, alpha_pos, alpha_neg).combine(logits, ref)
+            self.assertTrue(torch.equal(expected, actual), "seed=%d" % seed)
+
+    def test_identical_streams_give_zero_distance_and_add(self):
+        logits, _ = logits_pair(3)
+        s = ONLYContrast(0.5, 3, 1)
+        result = s.combine(logits, logits.clone())
+        self.assertTrue(torch.equal(result, logits + 3 * logits))
+        self.assertEqual(s.contrastive_count, 0)
+
+    def test_gate_threshold_is_configurable(self):
+        # Unlike DeGF's hardcoded 0.1, this one comes from config.json.
+        logits, ref = logits_pair(4)
+        tvd = self.original_tvd(logits, ref).item()
+        below = ONLYContrast(tvd + 1.0, 3, 1)   # gate never fires
+        above = ONLYContrast(tvd - 0.001, 3, 1) # gate always fires
+        below.combine(logits, ref)
+        above.combine(logits, ref)
+        self.assertEqual(below.contrastive_count, 0)
+        self.assertEqual(above.contrastive_count, 1)
+
+    def test_counters_accumulate(self):
+        s = ONLYContrast(0.5, 3, 1)
+        for seed in range(4):
+            s.combine(*logits_pair(seed))
+        self.assertEqual(s.token_count, 4)
+        self.assertEqual(len(s.tvd_list), 4)
+
+
 if __name__ == "__main__":
     if not HAVE_TORCH:
         print("torch not available — skipping")
