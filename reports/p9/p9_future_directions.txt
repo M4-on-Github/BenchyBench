@@ -1,0 +1,237 @@
+FUTURE RESEARCH DIRECTIONS -- detailed notes (from chat, 2026-09-09)
+Grounded via live web search (no Parallel API access this session -- smaller
+scale than the usual 60-reference academic packet; verify before citing in
+a manuscript).
+
+============================================================
+CURRENT CONCLUSION
+============================================================
+Three studies converge on one root cause: the pipeline's only confirmed,
+human-verified failure mode is misperception -- the model misreads which
+emergency it's looking at, states that wrong reading fluently and
+confidently, and nothing downstream catches it. Everything else measured
+(plan coverage, plan executability) either inherits that error uncaught or
+turns out to be an artifact of our own evaluation instruments (a narrow
+tool checklist), not a genuine planning defect. The system fails
+coherently, not randomly -- which is the hard case, because
+confident-and-wrong gives no signal to intervene on.
+
+============================================================
+1. MISPERCEPTION IS THE ROOT CAUSE -> push harder on visual grounding
+   at the perception step itself.
+============================================================
+Both mitigation methods already tested (DeGF, ONLY) are 2023-2024-era
+contrastive decoding; the field has moved to methods that specifically
+target the failure shape seen here (confident hallucination of a GLOBAL
+SCENE STATE, not just object hallucination).
+
+Worth testing: retrieval-augmented contrastive decoding (RVCD) and
+attention-calibration methods (CAAC, C-PMI) that correct visual grounding
+at decode time rather than only reducing object-level hallucination.
+
+Sources:
+- Delve into Visual Contrastive Decoding for Hallucination Mitigation of
+  Large Vision-Language Models -- https://arxiv.org/pdf/2412.06775
+- ASCD: Attention-Steerable Contrastive Decoding for Reducing
+  Hallucination in MLLM -- https://arxiv.org/pdf/2506.14766
+- Retrieval Visual Contrastive Decoding to Mitigate Object Hallucinations
+  in Large Vision-Language Models --
+  https://www.researchgate.net/publication/394271207
+- Curated list: Awesome-LVLM-Hallucination --
+  https://github.com/NishilBalar/Awesome-LVLM-Hallucination
+
+============================================================
+2. THE MODEL STATES WRONG ANSWERS WITH HIGH CONFIDENCE -> calibrate
+   confidence, don't just improve accuracy.
+============================================================
+The "confident silence" finding (a sinking vessel judged "good" at
+confidence 1.0) is exactly the object-level overconfidence pattern
+documented in current calibration literature. A calibrated system could
+at least flag its own low-reliability calls for human review instead of
+committing silently.
+
+Worth testing: decoupled visual/reasoning confidence estimation and
+selective prediction (abstain rather than answer when uncertain). Note
+also that CoT-style prompting can itself induce overconfidence, which is
+directly relevant since the six-prompt sweep already showed CoT-style
+prompts don't reliably help.
+
+Sources:
+- VL-Calibration: Decoupled Confidence Calibration for Large
+  Vision-Language Models Reasoning -- https://arxiv.org/pdf/2604.09529
+- Object-Level Verbalized Confidence Calibration in Vision-Language
+  Models via Semantic Perturbation -- https://arxiv.org/pdf/2504.14848
+- The Cost of Reasoning: Chain-of-Thought Induces Overconfidence in
+  Vision-Language Models -- https://arxiv.org/pdf/2603.16728
+
+============================================================
+3. NOTHING DOWNSTREAM CATCHES AN UPSTREAM PERCEPTION ERROR -> close the
+   loop with self-verification, not one-shot generation.
+============================================================
+Right now the pipeline is perceive-once -> plan-once -> evaluate-after-
+the-fact. Reflection/self-refine architectures let the system critique
+its own output against evidence before committing.
+
+Worth testing: a reflection pass between classification and plan-writing
+that must re-justify the casualty label against the image before
+planning proceeds.
+
+Sources:
+- Reflexion (verbal reinforcement learning via self-reflection) --
+  https://www.emergentmind.com/topics/reflective-llm-based-agent
+- Self-Refine (iterative generation-feedback-refinement, ~20% avg. gain)
+  -- https://medium.com/@jianzhang_23841/can-ai-agents-self-correct-43823962af92
+- CRITIC: tool-based self-correction using external knowledge bases --
+  https://arxiv.org/pdf/2402.02716
+
+============================================================
+4. P9's CHECKER IS A PRECONDITION/AFFORDANCE VALIDATOR SITTING AFTER
+   GENERATION, DOING NOTHING AT GENERATION TIME -> move it into the loop.
+   [[ SEE MENTOR CRITIQUE BELOW -- this direction needs revision ]]
+============================================================
+Original framing: you've already built the verifier (P9's tool registry +
+precondition checker) -- it's just used only for post-hoc grading. The
+robotics literature has been doing exactly this pairing (LLM proposes ->
+affordance model checks -> LLM replans) for years.
+
+Worth testing (as originally framed): SayCan-style architecture where
+P9's own precondition checker scores candidate next-steps DURING plan
+generation and vetoes infeasible ones, rather than only diagnosing the
+finished plan.
+
+Sources:
+- SayCan: Grounding Language in Robotic Affordances (84% plan success /
+  74% execution success, +14/+13 pts over ungrounded proposals) --
+  https://arxiv.org/pdf/2204.01691
+- DoReMi: Grounding Language Model by Detecting and Recovering from
+  Plan-Execution Misalignment -- https://arxiv.org/pdf/2307.00329
+- Towards Reliable and Robust LLM Planning: Symbolic Feedback-Driven
+  Iterative Self-Refinement Framework --
+  https://arxiv.org/html/2606.27757
+- Localizing and Correcting Errors for LLM-based Planners (VAL-validator
+  pattern: translate the first precondition failure into a corrective
+  instruction) -- https://arxiv.org/pdf/2602.00276
+
+Structurally identical to what P9's repair.py already computes -- just
+not fed back to the generator.
+
+============================================================
+5. THE CHECKLIST GAP (46% "UNEXECUTABLE" THAT'S ACTUALLY OUR OWN
+   VOCABULARY LIMIT) -> don't hand-author the action registry, retrieve
+   or induce it.
+============================================================
+The fix isn't "add more tools by hand" (rejected earlier this session,
+correctly -- that flatters the planner). It's making the action
+vocabulary open instead of fixed.
+
+Worth testing: retrieval-augmented grounding of plan steps against a real
+salvage-protocol corpus (so unrecognized actions get matched to real
+protocol text instead of silently failing). This is also the direct fix
+for RAG being completely untested in this project -- domain knowledge is
+currently hard-injected as fixed prompt assertions, the opposite of
+retrieval.
+
+Sources:
+- Retrieval-Augmented Generation: A Comprehensive Survey of
+  Architectures, Enhancements, and Robustness Frontiers --
+  https://arxiv.org/html/2506.00054v1
+- Hallucination-Resistant, Domain-Specific Research Assistant with
+  Self-Evaluation and Vector-Grounded Retrieval --
+  https://arxiv.org/pdf/2510.02326
+
+============================================================
+6. DOMAIN-AGNOSTIC PLANNING IS UNTESTED -> separate "identify domain"
+   from "plan within domain" as distinct, orchestrated agents.
+============================================================
+Right now perception and planning are two stages of one monolithic
+pipeline, hand-tuned for maritime salvage specifically.
+Task-decomposition/orchestration architectures treat this as a
+meta-agent that routes to domain-specific sub-agents/tool-registries --
+which is what would actually let the same harness handle a second
+domain.
+
+Sources:
+- AgentOrchestra: A Hierarchical Multi-Agent Framework for
+  General-Purpose Task Solving -- https://arxiv.org/html/2506.12508v1
+- Agent-Oriented Planning in Multi-Agent Systems --
+  https://arxiv.org/pdf/2410.02189
+- Verified Multi-Agent Orchestration: A Plan-Execute-Verify pattern --
+  https://arxiv.org/pdf/2603.11445 (closest match to "P9 as a live
+  verifier," generalized to a multi-domain setting)
+
+============================================================
+ORIGINAL PRIORITY RANKING (pre-mentor-critique)
+============================================================
+Given what's already built: (4) was ranked highest-leverage next step --
+it reuses P9 entirely, just moves it from evaluator to generation-time
+critic, and directly targets the confirmed root cause (misperception
+propagating uncaught). (2) was second -- cheap to add, directly
+measurable against existing confidence-scored prompts. (5)/(6) are the
+two components with zero prior work in this project and are the right
+long-horizon research targets once (4) is validated.
+
+============================================================
+MENTOR CRITIQUE ON (4), 2026-09-09
+============================================================
+Mentor's worry, as relayed: "using the pipeline to fact-check itself is
+like using the oracle to solve the problem without solving the problem."
+"If you use validator: letting the oracle tell you what you need to do.
+What does this output/failure mean? And then find a solution."
+
+RESOLUTION (2026-09-09):
+
+The critique is correct, and sharper here than the general case. Two
+problems with the original framing (P9 vetoes/auto-repairs steps live
+during generation):
+
+1. Goodhart's law. Optimizing or filtering a planner against a specific
+   checker produces outputs that satisfy THAT checker, not outputs that
+   are actually good plans. The checker's blind spots become the
+   model's exploit surface.
+   - AI Safety II: Goodharting and Reward Hacking --
+     https://synthesis.ai/2025/05/08/ai-safety-ii-goodharting-and-reward-hacking/
+   - Reward Hacking in the Era of Large Models --
+     https://arxiv.org/pdf/2604.13602
+
+2. A verifier verdict is a symptom, not a diagnosis. Root cause of a
+   planning failure sits a MEDIAN OF 4 STEPS before the symptom surfaces
+   (up to 26). The verifier catches "step 5 violates precondition X" but
+   says nothing about WHY the model produced step 5. Silently swapping
+   in a valid step makes the artifact pass; the actual defect is
+   untouched and resurfaces on the next case the checker doesn't happen
+   to catch.
+   - Where LLM Agents Fail and How They Can Learn From Failures --
+     https://www.alphaxiv.org/overview/2509.25370v1
+
+WHY IT'S WORSE HERE SPECIFICALLY: SayCan's affordance model reflects real
+ground truth (robot physics). P9 does NOT have that property -- this
+project's own results show P9 is a leaky oracle: only ONE of its six
+failure classes (Strategy-Perception) is human-confirmed; the LARGEST
+class (Procedure, 46%) is dominated by P9's OWN vocabulary gaps, not real
+planner failures (see p9_diagnosis.tex). Wiring P9 into the generation
+loop as an authority means correcting the model against a yardstick
+already proven wrong in the majority of its own biggest category.
+
+REVISED DIRECTION 4: use P9's failure categories to know WHERE TO LOOK,
+never as ground truth for WHAT'S CORRECT. Replace "auto-repair loop" with
+a diagnostic probe design:
+  a) Ask the model the precondition fact DIRECTLY, outside plan
+     generation ("does crew rescue have to happen before righting a
+     capsized vessel?"). If correct in isolation but violated inside a
+     generated plan -> the deficiency is APPLYING a known constraint
+     under generation load, not a knowledge gap.
+  b) Check whether violation rate depends on WHERE in the plan the
+     constraint was introduced (early vs. late) -> tests a
+     working-memory/context-degradation hypothesis, distinct from a
+     knowledge hypothesis.
+  c) Only after diagnosis, choose the intervention: retrieval/fine-tuning
+     for a real knowledge gap; reminder-scaffolding for a context
+     problem; a compositional-generalization study if single constraints
+     hold but combinations break.
+
+This reuses P9 for exactly what it is actually good for (reliably
+telling you THAT a plan is invalid) and stops it from also deciding HOW
+to fix it -- diagnosis-then-solution, not oracle-as-patch.
+
+STATUS: slides.tex "3--4: Close the loop" slide still shows the ORIGINAL
+(critiqued) framing as of this writing -- pending revision.
