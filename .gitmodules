@@ -17,3 +17,7 @@
 	path = QWEN-Maritime
 	url = https://github.com/M4-on-Github/QWEN-Maritime.git
 	branch = main
+[submodule "Resource_Constrained_Planning"]
+	path = Resource_Constrained_Planning
+	url = https://github.com/M4-on-Github/Resource_Constrained_Planning.git
+	branch = main
