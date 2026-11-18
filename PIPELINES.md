@@ -1,6 +1,6 @@
 # Pipeline Directory
 
-Every runnable pipeline across the four submodules and this repo, with where it
+Every runnable pipeline across the submodules and this repo, with where it
 lives and how it is invoked.
 
 **The submodules are where the work happens.** Each is an independent repo with
@@ -88,6 +88,26 @@ own `config.yaml`, prompts, assertions, and a one-shot `run_all.sh`. Has its own
 
 Ground truth for all of the above:
 `Eval_CASTOR/human_ground_truth_label/human_gt.csv`, joined on `image`.
+
+---
+
+## Resource-Constrained Planning (`Resource_Constrained_Planning/`) — Qwen3-VL-8B, GLM-4-32B
+
+Image and a resource ledger in; a salvage plan and a validator's judgement of it
+out. Its own repo with its own plan, runs and README; not wired into
+`visual_classification/`.
+
+| Pipeline | Status | Entry point |
+|---|---|---|
+| Callable interface | ⭐ | `rcp/api.py` (`from rcp import api`) |
+| Planner job | ✓ | `jobs/plan_job.sh` |
+| Extraction job | ✓ | `jobs/extract_job.sh` |
+
+**Other modules call `rcp/api.py` and nothing else in that repo.** One call per
+stage (`scenario`, `prompt`, `plan`, `extract`, `score`, `load_run`), because the
+planner and the scoring model need different containers; `load_run` reads a
+finished run with no GPU. See "Calling it from another module" in that repo's
+`README.md`.
 
 ---
 
